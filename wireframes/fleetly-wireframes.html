@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fleetly — Wireframes MVP</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+
+  .screen-container { max-width: 420px; margin: 0 auto; padding: 20px; }
+  .screen { background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.12); margin-bottom: 40px; overflow: hidden; }
+  .screen-label { text-align: center; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+
+  /* TOP BAR */
+  .topbar { background: #1a1a2e; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar .logo { color: #fff; font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+  .topbar .logo span { color: #4f8ef7; }
+  .topbar .avatar { width: 32px; height: 32px; border-radius: 50%; background: #4f8ef7; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 700; }
+
+  /* BOTTOM NAV */
+  .bottomnav { display: flex; border-top: 1px solid #eee; }
+  .bottomnav a { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 0; font-size: 10px; color: #999; text-decoration: none; gap: 3px; }
+  .bottomnav a.active { color: #4f8ef7; }
+  .bottomnav a svg { width: 20px; height: 20px; }
+
+  /* BODY */
+  .body { padding: 16px; }
+
+  /* DASHBOARD */
+  .greeting { font-size: 15px; color: #666; margin-bottom: 4px; }
+  .greeting strong { color: #1a1a2e; }
+  .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+  .kpi { background: #f7f9ff; border-radius: 12px; padding: 14px; }
+  .kpi .kpi-label { font-size: 11px; color: #999; margin-bottom: 4px; }
+  .kpi .kpi-value { font-size: 22px; font-weight: 800; color: #1a1a2e; }
+  .kpi .kpi-delta { font-size: 11px; color: #22c55e; margin-top: 2px; }
+  .kpi.alert .kpi-value { color: #ef4444; }
+  .kpi.alert .kpi-delta { color: #ef4444; }
+  .section-title { font-size: 13px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 10px; }
+  .course-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+  .course-item:last-child { border-bottom: none; }
+  .course-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: #22c55e; }
+  .dot-orange { background: #f97316; }
+  .dot-gray { background: #d1d5db; }
+  .course-info { flex: 1; }
+  .course-info .ci-name { font-size: 13px; font-weight: 600; }
+  .course-info .ci-sub { font-size: 11px; color: #999; }
+  .course-amount { font-size: 13px; font-weight: 700; color: #1a1a2e; }
+  .alert-banner { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #c2410c; display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+
+  /* COURSES LIST */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
+  .filter-chip { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1.5px solid #e2e8f0; white-space: nowrap; color: #666; background: white; }
+  .filter-chip.active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+  .course-card { border: 1.5px solid #f0f0f0; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+  .cc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .cc-patient { font-size: 14px; font-weight: 700; }
+  .cc-amount { font-size: 15px; font-weight: 800; color: #4f8ef7; }
+  .cc-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #777; margin-bottom: 3px; }
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-cpam { background: #dbeafe; color: #1d4ed8; }
+  .badge-prive { background: #f3f4f6; color: #374151; }
+  .badge-attente { background: #fef9c3; color: #a16207; }
+  .badge-paye { background: #dcfce7; color: #166534; }
+  .fab { position: relative; display: flex; justify-content: flex-end; margin-top: 8px; }
+  .fab-btn { background: #4f8ef7; color: white; border: none; border-radius: 50px; padding: 12px 20px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(79,142,247,0.4); }
+
+  /* SAISIE COURSE */
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 700; color: #666; margin-bottom: 5px; display: block; }
+  .form-input { width: 100%; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; font-size: 14px; color: #1a1a2e; background: #fafafa; }
+  .form-input:focus { outline: none; border-color: #4f8ef7; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .type-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .type-btn { padding: 10px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 12px; font-weight: 600; color: #666; text-align: center; cursor: pointer; }
+  .type-btn.active { border-color: #4f8ef7; background: #eff6ff; color: #1d4ed8; }
+  .btn-primary { width: 100%; background: #1a1a2e; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; }
+
+  /* CHAUFFEURS */
+  .driver-card { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1.5px solid #f0f0f0; border-radius: 12px; margin-bottom: 10px; }
+  .driver-avatar { width: 44px; height: 44px; border-radius: 50%; background: #e0e7ff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: #4f8ef7; flex-shrink: 0; }
+  .driver-info { flex: 1; }
+  .driver-name { font-size: 14px; font-weight: 700; }
+  .driver-vehicle { font-size: 12px; color: #999; }
+  .driver-status { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .status-libre { background: #dcfce7; color: #166534; }
+  .status-course { background: #dbeafe; color: #1e40af; }
+  .status-pause { background: #f3f4f6; color: #6b7280; }
+
+  /* FACTURATION */
+  .invoice-card { border: 1.5px solid #f0f0f0; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+  .inv-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .inv-num { font-size: 12px; color: #999; }
+  .inv-amount { font-size: 16px; font-weight: 800; }
+  .inv-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .inv-meta { font-size: 12px; color: #999; }
+  .inv-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+
+  /* STATS */
+  .chart-placeholder { background: #f7f9ff; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 14px; height: 140px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; }
+  .bar-row { display: flex; align-items: flex-end; justify-content: center; gap: 6px; height: 90px; }
+  .bar { width: 28px; border-radius: 6px 6px 0 0; }
+  .bar-label { font-size: 10px; color: #aaa; text-align: center; margin-top: 4px; }
+  .chart-title { font-size: 12px; color: #999; margin-bottom: 8px; }
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat-item { background: #f7f9ff; border-radius: 10px; padding: 12px; text-align: center; }
+  .stat-value { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+  .stat-label { font-size: 10px; color: #999; margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="screen-container">
+
+  <!-- SCREEN 1: DASHBOARD -->
+  <div class="screen-label">Écran 1 — Dashboard (accueil)</div>
+  <div class="screen">
+    <div class="topbar">
+      <div class="logo">Fleet<span>ly</span></div>
+      <div class="avatar">M</div>
+    </div>
+    <div class="body">
+      <div class="greeting">Bonjour, <strong>Michel 👋</strong></div>
+      <div style="font-size:12px;color:#999;margin-bottom:4px;">Vendredi 10 avril · Taxi Martin & Fils</div>
+
+      <div class="alert-banner">
+        ⚠️ 3 factures en attente de paiement (2 380 €)
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label">CA ce mois</div>
+          <div class="kpi-value">12 450€</div>
+          <div class="kpi-delta">↑ +8% vs mois dernier</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Courses aujourd'hui</div>
+          <div class="kpi-value">14</div>
+          <div class="kpi-delta">↑ 4 en attente</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Chauffeurs actifs</div>
+          <div class="kpi-value">3 / 4</div>
+          <div class="kpi-delta" style="color:#f97316;">1 en pause</div>
+        </div>
+        <div class="kpi alert">
+          <div class="kpi-label">Factures impayées</div>
+          <div class="kpi-value">2 380€</div>
+          <div class="kpi-delta">3 factures</div>
+        </div>
+      </div>
+
+      <div class="section-title">Courses récentes</div>
+      <div class="course-item">
+        <div class="course-dot dot-green"></div>
+        <div class="course-info">
+          <div class="ci-name">Mme Dupont → CHU Grenoble</div>
+          <div class="ci-sub">Jean-Luc · CPAM · 10h30</div>
+        </div>
+        <div class="course-amount">47€</div>
+      </div>
+      <div class="course-item">
+        <div class="course-dot dot-orange"></div>
+        <div class="course-info">
+          <div class="ci-name">M. Bernard → Clinique du Parc</div>
+          <div class="ci-sub">Sophie · CPAM · 11h15</div>
+        </div>
+        <div class="course-amount">32€</div>
+      </div>
+      <div class="course-item">
+        <div class="course-dot dot-gray"></div>
+        <div class="course-info">
+          <div class="ci-name">Aéroport → Centre-ville</div>
+          <div class="ci-sub">Marc · Privé · 09h00</div>
+        </div>
+        <div class="course-amount">68€</div>
+      </div>
+    </div>
+    <div class="bottomnav">
+      <a href="#" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Courses
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Chauffeurs
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+        Factures
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Stats
+      </a>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: COURSES -->
+  <div class="screen-label">Écran 2 — Liste des courses</div>
+  <div class="screen">
+    <div class="topbar">
+      <div class="logo">Fleet<span>ly</span></div>
+      <div class="avatar">M</div>
+    </div>
+    <div class="body">
+      <div style="font-size:18px;font-weight:800;margin-bottom:12px;">Courses</div>
+      <div class="filter-row">
+        <div class="filter-chip active">Aujourd'hui</div>
+        <div class="filter-chip">Cette semaine</div>
+        <div class="filter-chip">Ce mois</div>
+        <div class="filter-chip">CPAM</div>
+        <div class="filter-chip">Privé</div>
+      </div>
+
+      <div class="course-card">
+        <div class="cc-header">
+          <div class="cc-patient">Mme Dupont Marie</div>
+          <div class="cc-amount">47,20 €</div>
+        </div>
+        <div class="cc-row">📍 Grenoble → CHU Albert Michallon</div>
+        <div class="cc-row">👤 Jean-Luc · 🚖 AB-456-CD · 10h30</div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <span class="badge badge-cpam">CPAM</span>
+          <span class="badge badge-attente">En attente</span>
+        </div>
+      </div>
+
+      <div class="course-card">
+        <div class="cc-header">
+          <div class="cc-patient">M. Bernard Pierre</div>
+          <div class="cc-amount">32,00 €</div>
+        </div>
+        <div class="cc-row">📍 Échirolles → Clinique du Parc</div>
+        <div class="cc-row">👤 Sophie · 🚖 EF-789-GH · 11h15</div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <span class="badge badge-cpam">CPAM</span>
+          <span class="badge badge-paye">Payé</span>
+        </div>
+      </div>
+
+      <div class="course-card">
+        <div class="cc-header">
+          <div class="cc-patient">Aéroport — Course privée</div>
+          <div class="cc-amount">68,00 €</div>
+        </div>
+        <div class="cc-row">📍 Gare Grenoble → Aéroport Lyon</div>
+        <div class="cc-row">👤 Marc · 🚖 IJ-012-KL · 09h00</div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <span class="badge badge-prive">Privé</span>
+          <span class="badge badge-paye">Payé</span>
+        </div>
+      </div>
+
+      <div class="fab">
+        <button class="fab-btn">+ Nouvelle course</button>
+      </div>
+    </div>
+    <div class="bottomnav">
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="#" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Courses
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Chauffeurs
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+        Factures
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Stats
+      </a>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: NOUVELLE COURSE -->
+  <div class="screen-label">Écran 3 — Saisie d'une course</div>
+  <div class="screen">
+    <div class="topbar">
+      <div class="logo">Fleet<span>ly</span></div>
+      <div style="color:#4f8ef7;font-size:13px;font-weight:600;">Annuler</div>
+    </div>
+    <div class="body">
+      <div style="font-size:18px;font-weight:800;margin-bottom:16px;">Nouvelle course</div>
+
+      <div class="form-group">
+        <label class="form-label">TYPE DE COURSE</label>
+        <div class="type-selector">
+          <div class="type-btn active">🏥 Médical (CPAM)</div>
+          <div class="type-btn">🚖 Course privée</div>
+          <div class="type-btn">🏢 Contrat entreprise</div>
+          <div class="type-btn">✈️ Aéroport</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">PATIENT / CLIENT</label>
+        <input class="form-input" type="text" placeholder="Nom du patient" value="Dupont Marie">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">N° SÉCURITÉ SOCIALE</label>
+        <input class="form-input" type="text" placeholder="1 85 06 75 xxx xxx xx">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">DÉPART</label>
+          <input class="form-input" type="text" placeholder="Adresse départ" value="Grenoble">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ARRIVÉE</label>
+          <input class="form-input" type="text" placeholder="Destination" value="CHU Grenoble">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">DATE & HEURE</label>
+          <input class="form-input" type="text" value="10/04/2026 · 10h30">
+        </div>
+        <div class="form-group">
+          <label class="form-label">CHAUFFEUR</label>
+          <input class="form-input" type="text" value="Jean-Luc">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">MONTANT (€)</label>
+          <input class="form-input" type="text" value="47,20">
+        </div>
+        <div class="form-group">
+          <label class="form-label">KM PARCOURUS</label>
+          <input class="form-input" type="text" placeholder="ex. 12 km">
+        </div>
+      </div>
+
+      <button class="btn-primary">✓ Enregistrer la course</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: CHAUFFEURS -->
+  <div class="screen-label">Écran 4 — Chauffeurs</div>
+  <div class="screen">
+    <div class="topbar">
+      <div class="logo">Fleet<span>ly</span></div>
+      <div class="avatar">M</div>
+    </div>
+    <div class="body">
+      <div style="font-size:18px;font-weight:800;margin-bottom:12px;">Chauffeurs</div>
+
+      <div class="driver-card">
+        <div class="driver-avatar">JL</div>
+        <div class="driver-info">
+          <div class="driver-name">Jean-Luc Martin</div>
+          <div class="driver-vehicle">🚖 AB-456-CD · Peugeot 308</div>
+          <div style="font-size:11px;color:#999;margin-top:2px;">14 courses ce mois · 1 420€</div>
+        </div>
+        <span class="driver-status status-course">En course</span>
+      </div>
+
+      <div class="driver-card">
+        <div class="driver-avatar">SO</div>
+        <div class="driver-info">
+          <div class="driver-name">Sophie Ordaz</div>
+          <div class="driver-vehicle">🚖 EF-789-GH · Citroën C4</div>
+          <div style="font-size:11px;color:#999;margin-top:2px;">11 courses ce mois · 1 090€</div>
+        </div>
+        <span class="driver-status status-libre">Libre</span>
+      </div>
+
+      <div class="driver-card">
+        <div class="driver-avatar">MA</div>
+        <div class="driver-info">
+          <div class="driver-name">Marc Aubert</div>
+          <div class="driver-vehicle">🚖 IJ-012-KL · Renault Talisman</div>
+          <div style="font-size:11px;color:#999;margin-top:2px;">9 courses ce mois · 780€</div>
+        </div>
+        <span class="driver-status status-pause">Pause</span>
+      </div>
+
+      <div class="driver-card" style="border:2px dashed #e2e8f0;justify-content:center;">
+        <div style="color:#4f8ef7;font-weight:700;font-size:14px;">+ Ajouter un chauffeur</div>
+      </div>
+    </div>
+    <div class="bottomnav">
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Courses
+      </a>
+      <a href="#" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Chauffeurs
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+        Factures
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Stats
+      </a>
+    </div>
+  </div>
+
+  <!-- SCREEN 5: STATS -->
+  <div class="screen-label">Écran 5 — Statistiques & CA</div>
+  <div class="screen">
+    <div class="topbar">
+      <div class="logo">Fleet<span>ly</span></div>
+      <div class="avatar">M</div>
+    </div>
+    <div class="body">
+      <div style="font-size:18px;font-weight:800;margin-bottom:12px;">Statistiques</div>
+      <div class="filter-row">
+        <div class="filter-chip active">Ce mois</div>
+        <div class="filter-chip">3 mois</div>
+        <div class="filter-chip">Cette année</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-item">
+          <div class="stat-value">12 450€</div>
+          <div class="stat-label">CA total</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">247</div>
+          <div class="stat-label">Courses</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">50€</div>
+          <div class="stat-label">Moy. course</div>
+        </div>
+      </div>
+
+      <div class="chart-placeholder">
+        <div class="chart-title">CA par semaine (avril)</div>
+        <div class="bar-row">
+          <div>
+            <div class="bar" style="height:45px;background:#cbd5e1;"></div>
+            <div class="bar-label">S1</div>
+          </div>
+          <div>
+            <div class="bar" style="height:60px;background:#cbd5e1;"></div>
+            <div class="bar-label">S2</div>
+          </div>
+          <div>
+            <div class="bar" style="height:80px;background:#4f8ef7;"></div>
+            <div class="bar-label">S3</div>
+          </div>
+          <div>
+            <div class="bar" style="height:35px;background:#e2e8f0;"></div>
+            <div class="bar-label">S4</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Répartition</div>
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label">Courses CPAM</div>
+          <div class="kpi-value">68%</div>
+          <div class="kpi-delta" style="color:#4f8ef7;">8 460€</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Courses privées</div>
+          <div class="kpi-value">32%</div>
+          <div class="kpi-delta" style="color:#4f8ef7;">3 990€</div>
+        </div>
+      </div>
+
+      <div class="section-title">Par chauffeur</div>
+      <div class="course-item">
+        <div style="font-size:13px;font-weight:700;flex:1;">Jean-Luc</div>
+        <div style="background:#e0e7ff;border-radius:20px;height:8px;flex:2;overflow:hidden;"><div style="background:#4f8ef7;height:100%;width:70%;border-radius:20px;"></div></div>
+        <div style="font-size:13px;font-weight:700;margin-left:10px;">4 920€</div>
+      </div>
+      <div class="course-item">
+        <div style="font-size:13px;font-weight:700;flex:1;">Sophie</div>
+        <div style="background:#e0e7ff;border-radius:20px;height:8px;flex:2;overflow:hidden;"><div style="background:#4f8ef7;height:100%;width:50%;border-radius:20px;"></div></div>
+        <div style="font-size:13px;font-weight:700;margin-left:10px;">3 540€</div>
+      </div>
+      <div class="course-item">
+        <div style="font-size:13px;font-weight:700;flex:1;">Marc</div>
+        <div style="background:#e0e7ff;border-radius:20px;height:8px;flex:2;overflow:hidden;"><div style="background:#4f8ef7;height:100%;width:35%;border-radius:20px;"></div></div>
+        <div style="font-size:13px;font-weight:700;margin-left:10px;">2 430€</div>
+      </div>
+    </div>
+    <div class="bottomnav">
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Courses
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Chauffeurs
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+        Factures
+      </a>
+      <a href="#" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Stats
+      </a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
