@@ -1,6 +1,6 @@
 # myPilot — SaaS gestion de flotte (taxi, VTC, ambulance)
 
-> Ancien nom : Fleetly (renommé 2026-04-10). Dossier à renommer manuellement : `PROJECTS/fleetly` → `PROJECTS/mypilot`
+> Repo GitHub : Damartire89/mypilot
 
 Projet SaaS B2B à destination des gérants de flotte de véhicules de transport. Objectif : outil simple de gestion multi-véhicules/chauffeurs, vendable après validation avec les parents de Damien.
 
@@ -63,7 +63,7 @@ Le core est identique pour tous. La différence = templates de facture + champs 
 - **Auth** : simple email/password + rôles (admin gérant / chauffeur vue limitée)
 
 ## Prochaines étapes
-1. Valider le nom (Fleetly — à vérifier disponibilité domaine)
+1. ✅ Nom validé : myPilot
 2. Choisir la stack définitivement
 3. Wireframes des 5 écrans clés (dashboard, flotte, courses, facturation, chauffeurs)
 4. Développement MVP avec parents comme bêta-testeurs

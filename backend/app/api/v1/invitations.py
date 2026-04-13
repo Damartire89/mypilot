@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -18,7 +18,7 @@ def _get_valid_invitation(token: str, db: Session) -> Invitation:
         raise HTTPException(status_code=404, detail="Invitation introuvable")
     if invitation.used_at is not None:
         raise HTTPException(status_code=410, detail="Invitation déjà utilisée")
-    if invitation.expires_at < datetime.utcnow():
+    if invitation.expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
         raise HTTPException(status_code=410, detail="Invitation expirée")
     return invitation
 
@@ -54,7 +54,7 @@ def accept_invitation(token: str, body: InvitationAccept, db: Session = Depends(
     db.add(user)
     db.flush()
 
-    invitation.used_at = datetime.utcnow()
+    invitation.used_at = datetime.now(timezone.utc).replace(tzinfo=None)
     db.commit()
     db.refresh(user)
 

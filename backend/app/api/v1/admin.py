@@ -50,6 +50,12 @@ def delete_company(
     company = db.get(Company, company_id)
     if not company:
         raise HTTPException(status_code=404, detail="Entreprise introuvable")
+    # Refus de supprimer une entreprise qui contient un superadmin
+    has_superadmin = db.query(User).filter(
+        User.company_id == company_id, User.role == "superadmin"
+    ).first()
+    if has_superadmin:
+        raise HTTPException(status_code=400, detail="Impossible de supprimer une entreprise contenant un superadmin")
     db.query(Ride).filter(Ride.company_id == company_id).delete()
     db.query(Driver).filter(Driver.company_id == company_id).delete()
     db.query(Vehicle).filter(Vehicle.company_id == company_id).delete()

@@ -8,14 +8,14 @@
 
 ## Étape 1 — Pusher le code sur GitHub
 
-Dans le terminal, depuis le dossier `fleetly/` :
+Dans le terminal, depuis le dossier du projet :
 
 ```bash
 git init
 git add .
 git commit -m "feat: myPilot v1.1 — déploiement Railway"
 git branch -M main
-git remote add origin https://github.com/TON_USERNAME/mypilot.git
+git remote add origin https://github.com/Damartire89/mypilot.git
 git push -u origin main
 ```
 

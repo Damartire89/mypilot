@@ -10,7 +10,7 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 ### Session 1 (après-midi)
 - `[doc]` Création du projet — CLAUDE.md avec contexte, MVP features, stack envisagée
 - `[design]` Brainstorming + spec design : cible (gestionnaires flotte taxi/VTC), architecture multi-profil, fonctionnalités MVP
-- `[doc]` Plan d'implémentation complet — docs/superpowers/plans/2026-04-10-fleetly-mvp.md
+- `[doc]` Plan d'implémentation complet — docs/superpowers/plans/2026-04-10-mypilot-mvp.md
 - `[infra]` Init projet React 18 + Vite 8 + Tailwind CSS v4.2 + React Query v5 + Axios
 - `[design]` Logo myPilot — "my" (noir) + "pil" (bleu) + volant SVG (remplace le "o") + "t" (bleu)
 - `[feature]` Page Login — toggle login/register, validation, design mobile-first

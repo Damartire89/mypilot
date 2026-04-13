@@ -1,5 +1,5 @@
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -47,7 +47,7 @@ def invite_member(
         role=body.role,
         token=secrets.token_urlsafe(32),
         created_by=current_user.id,
-        expires_at=datetime.utcnow() + timedelta(days=7),
+        expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=7),
     )
     db.add(invitation)
     db.commit()

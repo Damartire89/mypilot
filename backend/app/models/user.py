@@ -9,5 +9,5 @@ class User(Base):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     email = Column(String(200), nullable=False, unique=True)
     hashed_password = Column(String(200), nullable=False)
-    role = Column(String(20), default="admin")  # admin | driver
+    role = Column(String(20), default="admin")  # superadmin | admin | manager | readonly
     created_at = Column(DateTime, server_default=func.now())

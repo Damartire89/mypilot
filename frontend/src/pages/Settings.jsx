@@ -78,14 +78,14 @@ export default function Settings() {
     onSuccess: (data) => {
       const link = `${window.location.origin}/invite/${data.token}`;
       setInviteLink(link);
-      qc.invalidateQueries(["members"]);
+      qc.invalidateQueries({ queryKey: ["members"] });
     },
     onError: (err) => toast(err?.response?.data?.detail || "Erreur invitation", "error"),
   });
 
   const removeMutation = useMutation({
     mutationFn: removeMember,
-    onSuccess: () => qc.invalidateQueries(["members"]),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["members"] }),
     onError: (err) => toast(err?.response?.data?.detail || "Erreur suppression", "error"),
   });
 

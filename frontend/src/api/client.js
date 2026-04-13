@@ -19,6 +19,7 @@ client.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("company");
+      localStorage.removeItem("user");
       window.location.href = "/";
     }
     return Promise.reject(err);
