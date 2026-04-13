@@ -171,12 +171,42 @@ while day.month == now.month:
     day += timedelta(days=1)
 
 db.commit()
+
+# ── COMPTE SUPERADMIN ────────────────────────────────────────────────────────
+SUPERADMIN_EMAIL = os.environ.get("SUPERADMIN_EMAIL", "admin@mypilot.app")
+SUPERADMIN_PASSWORD = os.environ.get("SUPERADMIN_PASSWORD", "superadmin2026!")
+
+sys_company = db.query(Company).filter(Company.email == SUPERADMIN_EMAIL).first()
+if not sys_company:
+    sys_company = Company(
+        name="myPilot — Admin",
+        email=SUPERADMIN_EMAIL,
+        activity_type="taxi",
+    )
+    db.add(sys_company)
+    db.flush()
+
+existing_superadmin = db.query(User).filter(User.email == SUPERADMIN_EMAIL).first()
+if not existing_superadmin:
+    superadmin = User(
+        company_id=sys_company.id,
+        email=SUPERADMIN_EMAIL,
+        hashed_password=hash_password(SUPERADMIN_PASSWORD),
+        role="superadmin",
+    )
+    db.add(superadmin)
+    db.commit()
+    superadmin_msg = f"Superadmin créé : {SUPERADMIN_EMAIL} / {SUPERADMIN_PASSWORD}"
+else:
+    db.commit()
+    superadmin_msg = f"Superadmin existant : {SUPERADMIN_EMAIL}"
+
 db.close()
 
 print(f"""
 Données de démo créées avec succès !
 
-Connexion :
+Connexion démo :
   Email    : demo@taximartin.fr
   Password : demo1234
 
@@ -185,6 +215,8 @@ Statistiques :
   Véhicules  : {len(vehicles_data)}
   Courses    : {rides_created}
 
+{superadmin_msg}
+
 Serveur    : http://localhost:8002
-Frontend   : http://localhost:4174
+Frontend   : http://localhost:5173
 """)

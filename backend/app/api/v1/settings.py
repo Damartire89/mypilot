@@ -5,7 +5,7 @@ from typing import Optional
 from app.database import get_db
 from app.models.settings import CompanySettings
 from app.models.company import Company
-from app.auth import get_current_company, get_current_user
+from app.auth import get_current_company, get_current_user, require_role
 from app.models.user import User
 
 router = APIRouter(prefix="/settings", tags=["settings"])
@@ -54,7 +54,7 @@ def get_or_create_settings(company_id: int, db: Session) -> CompanySettings:
 
 
 @router.get("")
-def get_settings(company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+def get_settings(company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_role("admin", "superadmin"))):
     s = get_or_create_settings(company.id, db)
     return {
         "company_name": company.name,
@@ -81,7 +81,7 @@ def get_settings(company: Company = Depends(get_current_company), db: Session = 
 
 
 @router.patch("")
-def update_settings(body: SettingsUpdate, company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+def update_settings(body: SettingsUpdate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_role("admin", "superadmin"))):
     # Mettre à jour company
     if body.company_name is not None:
         company.name = body.company_name

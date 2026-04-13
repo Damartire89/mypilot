@@ -54,3 +54,28 @@ def get_current_company(current_user: User = Depends(get_current_user), db: Sess
     if company is None:
         raise HTTPException(status_code=404, detail="Entreprise introuvable")
     return company
+
+
+def require_role(*allowed_roles: str):
+    """
+    Dependency factory : vérifie que l'utilisateur connecté a l'un des rôles autorisés.
+    Usage : Depends(require_role("admin", "superadmin"))
+    """
+    def _check(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Accès refusé — permissions insuffisantes",
+            )
+        return current_user
+    return _check
+
+
+def require_write_access(current_user: User = Depends(get_current_user)) -> User:
+    """Bloque les utilisateurs readonly sur toute opération d'écriture."""
+    if current_user.role == "readonly":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès en lecture seule",
+        )
+    return current_user

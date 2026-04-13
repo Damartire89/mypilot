@@ -7,7 +7,8 @@ from app.models.ride import Ride
 from app.models.driver import Driver
 from app.models.company import Company
 from app.schemas.ride import RideCreate, RideUpdate, RideOut
-from app.auth import get_current_company
+from app.auth import get_current_company, require_write_access
+from app.models.user import User
 from typing import List, Optional
 from datetime import date, datetime
 import csv
@@ -45,7 +46,7 @@ def list_rides(
 
 
 @router.post("", response_model=RideOut, status_code=201)
-def create_ride(body: RideCreate, company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+def create_ride(body: RideCreate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
     ride = Ride(**body.model_dump(), company_id=company.id)
     db.add(ride)
     db.commit()
@@ -231,7 +232,7 @@ def get_ride(ride_id: int, company: Company = Depends(get_current_company), db: 
 
 
 @router.patch("/{ride_id}", response_model=RideOut)
-def update_ride(ride_id: int, body: RideUpdate, company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+def update_ride(ride_id: int, body: RideUpdate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
     ride = db.query(Ride).filter(Ride.id == ride_id, Ride.company_id == company.id).first()
     if not ride:
         raise HTTPException(status_code=404, detail="Course introuvable")
@@ -243,7 +244,7 @@ def update_ride(ride_id: int, body: RideUpdate, company: Company = Depends(get_c
 
 
 @router.delete("/{ride_id}", status_code=204)
-def delete_ride(ride_id: int, company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+def delete_ride(ride_id: int, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
     ride = db.query(Ride).filter(Ride.id == ride_id, Ride.company_id == company.id).first()
     if not ride:
         raise HTTPException(status_code=404, detail="Course introuvable")

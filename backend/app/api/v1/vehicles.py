@@ -4,7 +4,8 @@ from app.database import get_db
 from app.models.vehicle import Vehicle
 from app.models.company import Company
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleOut
-from app.auth import get_current_company
+from app.auth import get_current_company, require_write_access
+from app.models.user import User
 from typing import List
 from datetime import date
 
@@ -59,7 +60,7 @@ def list_vehicles(company: Company = Depends(get_current_company), db: Session =
 
 
 @router.post("", response_model=VehicleOut, status_code=201)
-def create_vehicle(body: VehicleCreate, company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+def create_vehicle(body: VehicleCreate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
     vehicle = Vehicle(**body.model_dump(), company_id=company.id)
     db.add(vehicle)
     db.commit()
@@ -68,7 +69,7 @@ def create_vehicle(body: VehicleCreate, company: Company = Depends(get_current_c
 
 
 @router.patch("/{vehicle_id}", response_model=VehicleOut)
-def update_vehicle(vehicle_id: int, body: VehicleUpdate, company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+def update_vehicle(vehicle_id: int, body: VehicleUpdate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
     vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id, Vehicle.company_id == company.id).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail="Véhicule introuvable")
@@ -80,7 +81,7 @@ def update_vehicle(vehicle_id: int, body: VehicleUpdate, company: Company = Depe
 
 
 @router.delete("/{vehicle_id}", status_code=204)
-def delete_vehicle(vehicle_id: int, company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+def delete_vehicle(vehicle_id: int, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
     vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id, Vehicle.company_id == company.id).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail="Véhicule introuvable")

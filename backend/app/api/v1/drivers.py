@@ -6,7 +6,8 @@ from app.models.driver import Driver
 from app.models.ride import Ride
 from app.models.company import Company
 from app.schemas.driver import DriverCreate, DriverUpdate, DriverOut
-from app.auth import get_current_company
+from app.auth import get_current_company, require_write_access
+from app.models.user import User
 from typing import List, Optional
 from datetime import datetime
 
@@ -19,7 +20,7 @@ def list_drivers(company: Company = Depends(get_current_company), db: Session = 
 
 
 @router.post("", response_model=DriverOut, status_code=201)
-def create_driver(body: DriverCreate, company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+def create_driver(body: DriverCreate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
     driver = Driver(**body.model_dump(), company_id=company.id)
     db.add(driver)
     db.commit()
@@ -28,7 +29,7 @@ def create_driver(body: DriverCreate, company: Company = Depends(get_current_com
 
 
 @router.patch("/{driver_id}", response_model=DriverOut)
-def update_driver(driver_id: int, body: DriverUpdate, company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+def update_driver(driver_id: int, body: DriverUpdate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
     driver = db.query(Driver).filter(Driver.id == driver_id, Driver.company_id == company.id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Chauffeur introuvable")
@@ -40,7 +41,7 @@ def update_driver(driver_id: int, body: DriverUpdate, company: Company = Depends
 
 
 @router.delete("/{driver_id}", status_code=204)
-def delete_driver(driver_id: int, company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+def delete_driver(driver_id: int, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
     driver = db.query(Driver).filter(Driver.id == driver_id, Driver.company_id == company.id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Chauffeur introuvable")

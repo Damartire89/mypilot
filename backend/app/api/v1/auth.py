@@ -65,3 +65,23 @@ def change_password(
         raise HTTPException(status_code=400, detail="Le nouveau mot de passe doit faire au moins 6 caractères")
     current_user.hashed_password = hash_password(body.new_password)
     db.commit()
+
+
+class MeResponse(BaseModel):
+    id: int
+    email: str
+    role: str
+    company_id: int
+    company_name: str
+
+
+@router.get("/me", response_model=MeResponse)
+def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    company = db.get(Company, current_user.company_id)
+    return MeResponse(
+        id=current_user.id,
+        email=current_user.email,
+        role=current_user.role,
+        company_id=current_user.company_id,
+        company_name=company.name if company else "",
+    )
