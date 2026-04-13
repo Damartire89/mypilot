@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const items = [
   { to: "/dashboard", label: "Accueil", icon: (active) => (
@@ -40,8 +41,17 @@ const items = [
   )},
 ];
 
+const adminIcon = (active) => (
+  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#a855f7" : "#aaa"} strokeWidth="2">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+);
+
 export default function BottomNav() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "superadmin";
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex max-w-lg mx-auto z-50">
       {items.map(({ to, label, icon }) => {
@@ -55,6 +65,14 @@ export default function BottomNav() {
           </Link>
         );
       })}
+      {isSuperAdmin && (
+        <Link to="/superadmin"
+          className="flex-1 flex flex-col items-center py-2 gap-0.5"
+          style={{ color: pathname === "/superadmin" ? "#a855f7" : "#aaa" }}>
+          {adminIcon(pathname === "/superadmin")}
+          <span className="text-[10px] font-semibold leading-none">Admin</span>
+        </Link>
+      )}
     </div>
   );
 }

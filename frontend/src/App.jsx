@@ -9,6 +9,8 @@ import Settings from "./pages/Settings";
 import NewRide from "./pages/NewRide";
 import EditRide from "./pages/EditRide";
 import DriverProfile from "./pages/DriverProfile";
+import SuperAdmin from "./pages/SuperAdmin";
+import InviteAccept from "./pages/InviteAccept";
 import { useAuth } from "./context/AuthContext";
 
 function PrivateRoute({ children }) {
@@ -19,6 +21,13 @@ function PrivateRoute({ children }) {
 function PublicRoute({ children }) {
   const { isAuth } = useAuth();
   return isAuth ? <Navigate to="/dashboard" replace /> : children;
+}
+
+function SuperAdminRoute({ children }) {
+  const { user, isAuth } = useAuth();
+  if (!isAuth) return <Navigate to="/" replace />;
+  if (!user) return null; // en cours de chargement
+  return user.role === "superadmin" ? children : <Navigate to="/dashboard" replace />;
 }
 
 export default function App() {
@@ -35,6 +44,8 @@ export default function App() {
         <Route path="/vehicles" element={<PrivateRoute><Vehicles /></PrivateRoute>} />
         <Route path="/stats" element={<PrivateRoute><Stats /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+        <Route path="/superadmin" element={<SuperAdminRoute><SuperAdmin /></SuperAdminRoute>} />
+        <Route path="/invite/:token" element={<InviteAccept />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>

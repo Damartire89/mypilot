@@ -8,6 +8,10 @@ import { useToast } from "../components/Toast";
 import { getSettings, updateSettings } from "../api/settings";
 import { exportRidesCSV } from "../api/rides";
 import { changePassword } from "../api/auth";
+import { getMembers, inviteMember, removeMember } from "../api/members";
+
+const ROLE_LABELS = { admin: "Admin", manager: "Manager", readonly: "Lecture seule" };
+const ROLE_COLORS = { admin: "bg-blue-100 text-blue-800", manager: "bg-green-100 text-green-800", readonly: "bg-gray-100 text-gray-600" };
 
 // Sections de paramètres
 const ACTIVITY_TYPES = [
@@ -51,10 +55,39 @@ function Toggle({ value, onChange }) {
 }
 
 export default function Settings() {
-  const { company, signOut } = useAuth();
+  const { company, user, signOut } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const toast = useToast();
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+
+  // État onglet Équipe
+  const [inviteModal, setInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("manager");
+  const [inviteLink, setInviteLink] = useState(null);
+
+  const { data: members = [] } = useQuery({
+    queryKey: ["members"],
+    queryFn: getMembers,
+    enabled: isAdmin,
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: () => inviteMember(inviteEmail, inviteRole),
+    onSuccess: (data) => {
+      const link = `${window.location.origin}/invite/${data.token}`;
+      setInviteLink(link);
+      qc.invalidateQueries(["members"]);
+    },
+    onError: (err) => toast(err?.response?.data?.detail || "Erreur invitation", "error"),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: removeMember,
+    onSuccess: () => qc.invalidateQueries(["members"]),
+    onError: (err) => toast(err?.response?.data?.detail || "Erreur suppression", "error"),
+  });
 
   const { data: remote } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
   const mutation = useMutation({
@@ -314,6 +347,36 @@ export default function Settings() {
           </Row>
         </Section>
 
+        {/* Équipe — visible admin uniquement */}
+        {isAdmin && (
+          <Section title="Équipe">
+            {members.map(m => (
+              <div key={m.id} className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+                <div>
+                  <p className="text-sm font-semibold text-[#1a1a2e]">{m.email}</p>
+                  <span className={`inline-block text-xs px-2 py-0.5 rounded-full mt-0.5 font-medium ${ROLE_COLORS[m.role] || "bg-gray-100 text-gray-600"}`}>
+                    {ROLE_LABELS[m.role] || m.role}
+                  </span>
+                </div>
+                {m.id !== user?.id && (
+                  <button
+                    onClick={() => { if (confirm(`Retirer ${m.email} de l'équipe ?`)) removeMutation.mutate(m.id); }}
+                    className="text-red-400 text-xs px-2 py-1 rounded hover:bg-red-50"
+                  >
+                    Retirer
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              className="w-full px-4 py-3 text-left text-sm font-semibold text-[#3fa9f5]"
+              onClick={() => { setInviteModal(true); setInviteLink(null); setInviteEmail(""); }}
+            >
+              + Inviter un membre
+            </button>
+          </Section>
+        )}
+
         {/* Compte */}
         <Section title="Compte">
           <button className="w-full" onClick={() => setPwModal(true)}>
@@ -400,6 +463,71 @@ export default function Settings() {
                 {pwLoading ? "Modification..." : "Modifier"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal invitation */}
+      {inviteModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={() => setInviteModal(false)}>
+          <div className="bg-white rounded-t-2xl w-full max-w-lg p-5" onClick={e => e.stopPropagation()}>
+            <p className="text-base font-black text-[#1a1a2e] mb-4">Inviter un membre</p>
+            {!inviteLink ? (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Email</label>
+                  <input
+                    type="email"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
+                    value={inviteEmail}
+                    onChange={e => setInviteEmail(e.target.value)}
+                    placeholder="prenom@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Rôle</label>
+                  <select
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none"
+                    value={inviteRole}
+                    onChange={e => setInviteRole(e.target.value)}
+                  >
+                    <option value="admin">Admin — accès complet</option>
+                    <option value="manager">Manager — saisie et modification</option>
+                    <option value="readonly">Lecture seule — consultation uniquement</option>
+                  </select>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => setInviteModal(false)}
+                    className="flex-1 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-500">
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => inviteMutation.mutate()}
+                    disabled={!inviteEmail || inviteMutation.isPending}
+                    className="flex-1 bg-[#3fa9f5] text-white rounded-xl py-3 text-sm font-bold disabled:opacity-50">
+                    {inviteMutation.isPending ? "Génération..." : "Générer le lien"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-gray-500 mb-3">Lien d'invitation généré — valable 7 jours :</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-3 text-xs font-mono text-gray-700 break-all mb-4">
+                  {inviteLink}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(inviteLink); toast("Lien copié !", "success"); }}
+                    className="flex-1 bg-[#3fa9f5] text-white rounded-xl py-3 text-sm font-bold">
+                    Copier le lien
+                  </button>
+                  <button onClick={() => setInviteModal(false)}
+                    className="flex-1 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-500">
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

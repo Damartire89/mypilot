@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, register } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
+import client from "../api/client";
 
 export default function Login() {
   const { signIn } = useAuth();
@@ -22,7 +23,10 @@ export default function Login() {
       } else {
         data = await register(form.company_name, form.email, form.password);
       }
-      signIn(data.access_token, { name: data.company_name });
+      const meRes = await client.get("/api/v1/auth/me", {
+        headers: { Authorization: `Bearer ${data.access_token}` }
+      });
+      signIn(data.access_token, { name: data.company_name }, meRes.data);
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.detail || "Erreur de connexion");
