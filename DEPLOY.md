@@ -1,97 +1,83 @@
-# Déploiement myPilot sur Railway
+# Déploiement myPilot — GitHub → Vercel (frontend) + backend séparé
 
 ## Prérequis
-- Compte GitHub avec ce repo (public ou privé)
-- Compte Railway (gratuit sur railway.app)
+
+- Repo GitHub `Damartire89/mypilot` (déjà configuré)
+- Compte Vercel connecté à GitHub
+- Backend déployé séparément (Render, Fly.io, VPS...) avec PostgreSQL
 
 ---
 
-## Étape 1 — Pusher le code sur GitHub
+## Étape 1 — Déployer le backend
 
-Dans le terminal, depuis le dossier du projet :
+Le backend FastAPI peut tourner sur n'importe quel hébergeur Python.
+
+### Variables d'environnement requises
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | URL PostgreSQL (ex: `postgresql://user:pass@host/db`) |
+| `SECRET_KEY` | Clé JWT — générer avec `openssl rand -hex 32` |
+| `ALLOWED_ORIGINS` | URL du frontend Vercel (ex: `https://mypilot.vercel.app`) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Durée JWT en minutes (défaut: 1440 = 24h) |
+
+### Commande de démarrage
 
 ```bash
-git init
-git add .
-git commit -m "feat: myPilot v1.1 — déploiement Railway"
-git branch -M main
-git remote add origin https://github.com/Damartire89/mypilot.git
-git push -u origin main
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+### Appliquer les migrations
+
+```bash
+PYTHONPATH=. alembic upgrade head
 ```
 
 ---
 
-## Étape 2 — Créer le projet Railway
+## Étape 2 — Déployer le frontend sur Vercel
 
-1. Aller sur **railway.app** → Se connecter → **New Project**
-2. Choisir **Deploy from GitHub repo** → Sélectionner `mypilot`
-3. Railway propose de déployer automatiquement — **passer pour l'instant**
-
----
-
-## Étape 3 — Ajouter PostgreSQL
-
-Dans le projet Railway :
-1. **New Service** → **Database** → **Add PostgreSQL**
-2. PostgreSQL est créé — noter la variable `DATABASE_URL` (Railway l'injecte automatiquement)
-
----
-
-## Étape 4 — Déployer le Backend
-
-1. **New Service** → **GitHub Repo** → choisir `mypilot`
-2. Dans les paramètres du service → **Root Directory** → `backend`
-3. **Variables d'environnement** (onglet Variables) :
+1. Aller sur **vercel.com** → **Add New Project**
+2. Importer le repo GitHub `Damartire89/mypilot`
+3. Configurer le projet :
+   - **Root Directory** : `frontend`
+   - **Framework Preset** : Vite
+   - **Build Command** : `npm run build`
+   - **Output Directory** : `dist`
+4. Ajouter la variable d'environnement :
 
 | Variable | Valeur |
-|----------|--------|
-| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (lier au service PostgreSQL) |
-| `SECRET_KEY` | Générer : `openssl rand -hex 32` (ex: `a3f8e2...`) |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` |
-| `ALLOWED_ORIGINS` | *(à remplir après création du frontend, voir étape 6)* |
+|---|---|
+| `VITE_API_URL` | URL du backend (ex: `https://mypilot-api.onrender.com`) |
 
-4. Cliquer **Deploy** — attendre que le build passe ✓
-5. Dans Settings → **Generate Domain** → noter l'URL (ex: `https://mypilot-backend.up.railway.app`)
+5. Cliquer **Deploy**
 
 ---
 
-## Étape 5 — Déployer le Frontend
+## Étape 3 — Mettre à jour ALLOWED_ORIGINS sur le backend
 
-1. **New Service** → **GitHub Repo** → choisir `mypilot`
-2. **Root Directory** → `frontend`
-3. **Variables d'environnement** :
-
-| Variable | Valeur |
-|----------|--------|
-| `VITE_API_URL` | `https://mypilot-backend.up.railway.app` *(URL du backend étape 4)* |
-
-4. Cliquer **Deploy** — attendre ✓
-5. Dans Settings → **Generate Domain** → noter l'URL (ex: `https://mypilot-frontend.up.railway.app`)
+Une fois le frontend déployé, noter l'URL Vercel (ex: `https://mypilot.vercel.app`) et la renseigner dans `ALLOWED_ORIGINS` sur le backend, puis redémarrer.
 
 ---
 
-## Étape 6 — Mettre à jour le CORS backend
+## Étape 4 — Vérification
 
-Revenir sur le service **backend** → Variables :
-- `ALLOWED_ORIGINS` = `https://mypilot-frontend.up.railway.app`
-
-**Redéployer le backend** (bouton Redeploy).
-
----
-
-## Étape 7 — Vérifier
-
-1. Ouvrir `https://mypilot-frontend.up.railway.app` dans le navigateur
-2. Créer un compte → tester la démo
-3. Partager l'URL à tes parents 🎉
+1. Ouvrir l'URL Vercel dans le navigateur
+2. Créer un compte ou se connecter
+3. Vérifier que le dashboard, les courses et la flotte fonctionnent
 
 ---
 
-## Notes
+## Données de démo (optionnel)
 
-- **Données de démo** : lancer le seed depuis le backend Railway (onglet Terminal dans Railway) :
-  ```bash
-  python seed_demo.py
-  ```
-- **Mise à jour** : un `git push` sur `main` redéploie automatiquement
-- **Gratuit** jusqu'à 500h/mois sur Railway (largement suffisant pour une démo)
+Depuis le répertoire `backend` :
+
+```bash
+PYTHONPATH=. python seed_demo.py
+```
+
+---
+
+## Mises à jour
+
+Un `git push` sur `main` redéploie automatiquement le frontend via Vercel.
