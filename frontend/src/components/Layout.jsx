@@ -1,0 +1,280 @@
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import Logo from "./Logo";
+import BottomNav from "./BottomNav";
+
+const NAV_ITEMS = [
+  {
+    to: "/dashboard",
+    label: "Tableau de bord",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+    ),
+  },
+  {
+    to: "/rides",
+    label: "Courses",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+      </svg>
+    ),
+  },
+  {
+    to: "/vehicles",
+    label: "Flotte",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h5l3 5v3h-8V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    ),
+  },
+  {
+    to: "/drivers",
+    label: "Équipe",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    ),
+  },
+  {
+    to: "/stats",
+    label: "Statistiques",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+    ),
+  },
+  {
+    to: "/settings",
+    label: "Paramètres",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    ),
+  },
+];
+
+function NavItem({ to, label, icon, exact = false }) {
+  const { pathname } = useLocation();
+  const isActive = exact
+    ? pathname === to
+    : pathname === to || (to !== "/dashboard" && pathname.startsWith(to));
+
+  return (
+    <Link
+      to={to}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        padding: "7px 10px",
+        borderRadius: "8px",
+        fontSize: "13.5px",
+        fontWeight: isActive ? "600" : "500",
+        color: isActive ? "var(--brand)" : "var(--text-2)",
+        background: isActive ? "var(--brand-light)" : "transparent",
+        textDecoration: "none",
+        marginBottom: "1px",
+      }}
+      onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--surface-2)"; }}
+      onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+    >
+      <span style={{ color: isActive ? "var(--brand)" : "var(--text-3)", flexShrink: 0 }}>{icon}</span>
+      {label}
+    </Link>
+  );
+}
+
+function Sidebar({ company, user }) {
+  const { pathname } = useLocation();
+  const { signOut } = useAuth();
+  const isSuperAdmin = user?.role === "superadmin";
+  const initials = (company?.name || "MP").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+
+  return (
+    <aside style={{
+      display: "flex",
+      flexDirection: "column",
+      width: "var(--sidebar-width)",
+      minHeight: "100vh",
+      background: "var(--sidebar-bg)",
+      borderRight: "1px solid var(--border)",
+      position: "fixed",
+      left: 0, top: 0, bottom: 0,
+      zIndex: 40,
+    }}
+    className="hidden lg:flex"
+    >
+      {/* Logo */}
+      <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid var(--border)" }}>
+        <Logo size={22} />
+      </div>
+
+      {/* Entreprise badge */}
+      <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{
+            width: 32, height: 32,
+            borderRadius: "9px",
+            background: "var(--brand)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "white", fontSize: "12px", fontWeight: 700, flexShrink: 0,
+            letterSpacing: "0.02em",
+          }}>
+            {initials}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {company?.name || "myPilot"}
+            </p>
+            <p style={{ fontSize: "11px", color: "var(--text-3)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {user?.email || ""}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: "10px 10px", overflowY: "auto" }}>
+        {NAV_ITEMS.map(({ to, label, icon }) => (
+          <NavItem key={to} to={to} label={label} icon={icon} exact={to === "/dashboard"} />
+        ))}
+
+        {isSuperAdmin && (
+          <>
+            <div style={{ height: 1, background: "var(--border)", margin: "10px 4px" }} />
+            <Link
+              to="/superadmin"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "7px 10px",
+                borderRadius: "8px",
+                fontSize: "13.5px",
+                fontWeight: pathname === "/superadmin" ? "600" : "500",
+                color: pathname === "/superadmin" ? "#7c3aed" : "var(--text-2)",
+                background: pathname === "/superadmin" ? "#f5f3ff" : "transparent",
+                textDecoration: "none",
+              }}
+              onMouseEnter={e => { if (pathname !== "/superadmin") e.currentTarget.style.background = "var(--surface-2)"; }}
+              onMouseLeave={e => { if (pathname !== "/superadmin") e.currentTarget.style.background = "transparent"; }}
+            >
+              <span style={{ color: pathname === "/superadmin" ? "#7c3aed" : "var(--text-3)" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </span>
+              Superadmin
+            </Link>
+          </>
+        )}
+      </nav>
+
+      {/* Déconnexion */}
+      <div style={{ padding: "10px", borderTop: "1px solid var(--border)" }}>
+        <button
+          onClick={signOut}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: "7px 10px",
+            borderRadius: "8px",
+            fontSize: "13.5px",
+            fontWeight: "500",
+            color: "var(--text-3)",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            width: "100%",
+            textAlign: "left",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "var(--surface-2)"; e.currentTarget.style.color = "var(--text-2)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-3)"; }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Déconnexion
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+export default function Layout({ children, title }) {
+  const { company, user } = useAuth();
+  const initials = (company?.name || "MP").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <Sidebar company={company} user={user} />
+
+      <div style={{ marginLeft: 0 }} className="lg:ml-[240px] flex flex-col min-h-screen">
+        {/* TopBar mobile */}
+        <div
+          className="lg:hidden"
+          style={{
+            background: "var(--surface)",
+            borderBottom: "1px solid var(--border)",
+            padding: "12px 16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Logo size={20} />
+          <div style={{
+            width: 30, height: 30,
+            borderRadius: "8px",
+            background: "var(--brand)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "white", fontSize: "11px", fontWeight: 700,
+          }}>
+            {initials}
+          </div>
+        </div>
+
+        {/* Header desktop */}
+        {title && (
+          <div
+            className="hidden lg:flex"
+            style={{
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0 32px",
+              height: "56px",
+              background: "var(--surface)",
+              borderBottom: "1px solid var(--border)",
+            }}
+          >
+            <h1 style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)", margin: 0 }}>{title}</h1>
+          </div>
+        )}
+
+        {/* Contenu */}
+        <main style={{ flex: 1, paddingBottom: "80px" }} className="lg:pb-0">
+          {children}
+        </main>
+      </div>
+
+      <BottomNav />
+    </div>
+  );
+}

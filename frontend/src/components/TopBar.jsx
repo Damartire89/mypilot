@@ -1,11 +1,23 @@
 import Logo from "./Logo";
+import { useAuth } from "../context/AuthContext";
 
-export default function TopBar({ company = "Taxi Martin" }) {
-  const initials = company.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+export default function TopBar() {
+  const { company } = useAuth();
+  const name = company?.name || "myPilot";
+  const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return (
-    <div className="bg-[#1a1a2e] px-4 py-3 flex items-center justify-between">
-      <Logo size={22} />
-      <div className="w-8 h-8 rounded-full bg-[#3fa9f5] flex items-center justify-center text-white text-xs font-bold">
+    <div style={{
+      background: "var(--surface)", borderBottom: "1px solid var(--border)",
+      padding: "0 16px", height: "52px",
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+    }}>
+      <Logo size={20} />
+      <div style={{
+        width: 32, height: 32, borderRadius: "8px",
+        background: "var(--brand)", color: "white",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "12px", fontWeight: 700,
+      }}>
         {initials}
       </div>
     </div>

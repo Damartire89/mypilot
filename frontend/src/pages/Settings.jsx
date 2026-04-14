@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import TopBar from "../components/TopBar";
-import BottomNav from "../components/BottomNav";
+import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
 import { getSettings, updateSettings } from "../api/settings";
@@ -11,7 +10,11 @@ import { changePassword } from "../api/auth";
 import { getMembers, inviteMember, removeMember } from "../api/members";
 
 const ROLE_LABELS = { admin: "Admin", manager: "Manager", readonly: "Lecture seule" };
-const ROLE_COLORS = { admin: "bg-blue-100 text-blue-800", manager: "bg-green-100 text-green-800", readonly: "bg-gray-100 text-gray-600" };
+const ROLE_STYLES = {
+  admin:    { bg: "var(--brand-light)",   color: "var(--brand)" },
+  manager:  { bg: "var(--success-bg)",    color: "var(--success)" },
+  readonly: { bg: "var(--surface-2)",     color: "var(--text-3)" },
+};
 
 // Sections de paramètres
 const ACTIVITY_TYPES = [
@@ -26,19 +29,19 @@ const ALERT_TYPES = ["CT véhicule", "Assurance", "Révision", "Permis de condui
 
 function Section({ title, children }) {
   return (
-    <div className="mb-5">
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2 px-1">{title}</p>
-      <div className="bg-white rounded-xl overflow-hidden shadow-sm">{children}</div>
+    <div style={{ marginBottom: "20px" }}>
+      <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px 2px" }}>{title}</p>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>{children}</div>
     </div>
   );
 }
 
 function Row({ label, sub, children, border = true }) {
   return (
-    <div className={`flex items-center justify-between px-4 py-3.5 gap-3 ${border ? "border-b border-gray-50" : ""}`}>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[#1a1a2e]">{label}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", gap: 12, borderBottom: border ? "1px solid var(--border)" : "none" }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: "13.5px", fontWeight: 500, color: "var(--text)", margin: 0 }}>{label}</p>
+        {sub && <p style={{ fontSize: "11.5px", color: "var(--text-3)", margin: "2px 0 0" }}>{sub}</p>}
       </div>
       {children}
     </div>
@@ -47,9 +50,26 @@ function Row({ label, sub, children, border = true }) {
 
 function Toggle({ value, onChange }) {
   return (
-    <button onClick={() => onChange(!value)} type="button"
-      className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${value ? "bg-[#3fa9f5]" : "bg-gray-200"}`}>
-      <div className={`w-5 h-5 bg-white rounded-full shadow absolute top-0.5 transition-all ${value ? "left-5.5 translate-x-0.5" : "left-0.5"}`} />
+    <button
+      onClick={() => onChange(!value)}
+      type="button"
+      style={{
+        width: 40, height: 22, borderRadius: "99px", border: "none",
+        background: value ? "var(--brand)" : "var(--border-strong)",
+        position: "relative", cursor: "pointer", flexShrink: 0,
+        transition: "background 0.2s",
+      }}
+    >
+      <div style={{
+        width: 18, height: 18,
+        background: "white",
+        borderRadius: "50%",
+        position: "absolute",
+        top: 2,
+        left: value ? 20 : 2,
+        transition: "left 0.2s",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+      }} />
     </button>
   );
 }
@@ -203,42 +223,42 @@ export default function Settings() {
     setArr(arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val]);
   };
 
+  const inputStyle = { fontSize: "13px", textAlign: "right", color: "var(--text-2)", background: "transparent", outline: "none", border: "none", width: "144px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+  const inputStyleBrand = { ...inputStyle, color: "var(--brand)", fontWeight: 600 };
+
   return (
-    <div className="max-w-lg mx-auto pb-24 bg-gray-50 min-h-screen">
-      <TopBar company={company?.name || "myPilot"} />
-      <div className="p-4">
-        <p className="text-lg font-black text-[#1a1a2e] mb-4">Paramètres</p>
+    <Layout title="Paramètres">
+      <div className="max-w-2xl mx-auto p-4 lg:p-6 animate-fade-in">
 
         {/* Entreprise */}
         <Section title="Mon entreprise">
           <Row label="Nom de l'entreprise" border>
-            <input className="text-sm text-right text-[#3fa9f5] font-semibold bg-transparent outline-none w-36 truncate"
-              value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Nom..." />
+            <input style={inputStyleBrand} value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Nom..." />
           </Row>
           <Row label="SIRET" sub="14 chiffres" border>
-            <input className="text-sm text-right text-gray-500 bg-transparent outline-none w-36"
-              value={siret} onChange={e => setSiret(e.target.value)} placeholder="00000000000000" maxLength={14} />
+            <input style={inputStyle} value={siret} onChange={e => setSiret(e.target.value)} placeholder="00000000000000" maxLength={14} />
           </Row>
           <Row label="Téléphone" border>
-            <input className="text-sm text-right text-gray-500 bg-transparent outline-none w-36"
-              value={phone} onChange={e => setPhone(e.target.value)} placeholder="06 XX XX XX XX" />
+            <input style={inputStyle} value={phone} onChange={e => setPhone(e.target.value)} placeholder="06 XX XX XX XX" />
           </Row>
           <Row label="Adresse" border={false}>
-            <input className="text-sm text-right text-gray-500 bg-transparent outline-none w-36 truncate"
-              value={address} onChange={e => setAddress(e.target.value)} placeholder="Ville..." />
+            <input style={inputStyle} value={address} onChange={e => setAddress(e.target.value)} placeholder="Ville..." />
           </Row>
         </Section>
 
         {/* Type d'activité */}
         <Section title="Type d'activité">
-          <div className="p-3 grid grid-cols-2 gap-2">
+          <div style={{ padding: "12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
             {ACTIVITY_TYPES.map(at => (
               <button key={at.value} onClick={() => setActivityType(at.value)} type="button"
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
-                  activityType === at.value
-                    ? "border-[#3fa9f5] bg-[#3fa9f5]/8 text-[#3fa9f5]"
-                    : "border-gray-200 text-gray-500"
-                }`}>
+                style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  padding: "9px 12px", borderRadius: "9px",
+                  border: activityType === at.value ? "1px solid var(--brand)" : "1px solid var(--border)",
+                  background: activityType === at.value ? "var(--brand-light)" : "transparent",
+                  color: activityType === at.value ? "var(--brand)" : "var(--text-2)",
+                  fontSize: "13px", fontWeight: 500, cursor: "pointer",
+                }}>
                 <span>{at.icon}</span>{at.label}
               </button>
             ))}
@@ -248,63 +268,60 @@ export default function Settings() {
         {/* Facturation */}
         <Section title="Facturation">
           <Row label="Préfixe facture" sub="ex. FAC, TXM, 2026-" border>
-            <input className="text-sm text-right text-[#3fa9f5] font-semibold bg-transparent outline-none w-20"
-              value={invoicePrefix} onChange={e => setInvoicePrefix(e.target.value)} placeholder="FAC" />
+            <input style={{ ...inputStyleBrand, width: 80 }} value={invoicePrefix} onChange={e => setInvoicePrefix(e.target.value)} placeholder="FAC" />
           </Row>
           <Row label="Prochain numéro" border>
-            <input className="text-sm text-right text-gray-500 bg-transparent outline-none w-20"
-              value={invoiceNextNumber} onChange={e => setInvoiceNextNumber(e.target.value)} placeholder="001" />
+            <input style={{ ...inputStyle, width: 80 }} value={invoiceNextNumber} onChange={e => setInvoiceNextNumber(e.target.value)} placeholder="001" />
           </Row>
           <Row label="TVA" border>
-            <div className="flex items-center gap-1">
-              <input className="text-sm text-right text-gray-500 bg-transparent outline-none w-10"
-                value={tvaRate} onChange={e => setTvaRate(e.target.value)} placeholder="10" />
-              <span className="text-sm text-gray-400">%</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <input style={{ ...inputStyle, width: 40 }} type="number" value={tvaRate} onChange={e => setTvaRate(e.target.value)} placeholder="10" />
+              <span style={{ fontSize: "13px", color: "var(--text-3)" }}>%</span>
             </div>
           </Row>
-          <div className="px-4 py-3">
-            <p className="text-xs font-semibold text-gray-500 mb-2">Modes de paiement actifs</p>
-            <div className="flex flex-wrap gap-2">
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
+            <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-2)", margin: "0 0 8px" }}>Modes de paiement actifs</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {PAYMENT_OPTIONS.map(p => (
                 <button key={p} type="button" onClick={() => toggleArr(enabledPayments, setEnabledPayments, p)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                    enabledPayments.includes(p)
-                      ? "bg-[#3fa9f5] text-white border-[#3fa9f5]"
-                      : "bg-white text-gray-400 border-gray-200"
-                  }`}>
+                  style={{
+                    padding: "4px 11px", borderRadius: "99px", fontSize: "12px", fontWeight: 500, cursor: "pointer",
+                    border: enabledPayments.includes(p) ? "1px solid var(--brand)" : "1px solid var(--border)",
+                    background: enabledPayments.includes(p) ? "var(--brand)" : "var(--surface)",
+                    color: enabledPayments.includes(p) ? "white" : "var(--text-2)",
+                  }}>
                   {p}
                 </button>
               ))}
             </div>
           </div>
           <Row label="Pied de facture" sub="Texte libre affiché en bas des factures" border={false}>
-            <input className="text-sm text-right text-gray-400 bg-transparent outline-none w-36 truncate"
-              value={invoiceFooter} onChange={e => setInvoiceFooter(e.target.value)} placeholder="Merci de votre confiance" />
+            <input style={inputStyle} value={invoiceFooter} onChange={e => setInvoiceFooter(e.target.value)} placeholder="Merci de votre confiance" />
           </Row>
         </Section>
 
-        {/* Alertes véhicule */}
+        {/* Alertes */}
         <Section title="Alertes & rappels">
-          <div className="px-4 py-3 border-b border-gray-50">
-            <p className="text-xs font-semibold text-gray-500 mb-2">Alertes activées</p>
-            <div className="flex flex-wrap gap-2">
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
+            <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-2)", margin: "0 0 8px" }}>Alertes activées</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {ALERT_TYPES.map(a => (
                 <button key={a} type="button" onClick={() => toggleArr(enabledAlerts, setEnabledAlerts, a)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                    enabledAlerts.includes(a)
-                      ? "bg-[#1a1a2e] text-white border-[#1a1a2e]"
-                      : "bg-white text-gray-400 border-gray-200"
-                  }`}>
+                  style={{
+                    padding: "4px 11px", borderRadius: "99px", fontSize: "12px", fontWeight: 500, cursor: "pointer",
+                    border: enabledAlerts.includes(a) ? "1px solid var(--text)" : "1px solid var(--border)",
+                    background: enabledAlerts.includes(a) ? "var(--text)" : "var(--surface)",
+                    color: enabledAlerts.includes(a) ? "white" : "var(--text-2)",
+                  }}>
                   {a}
                 </button>
               ))}
             </div>
           </div>
           <Row label="Délai d'alerte" sub="Jours avant échéance" border={false}>
-            <div className="flex items-center gap-1">
-              <input className="text-sm text-right text-gray-500 bg-transparent outline-none w-12"
-                type="number" value={alertDaysBefore} onChange={e => setAlertDaysBefore(e.target.value)} />
-              <span className="text-sm text-gray-400">jours</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <input style={{ ...inputStyle, width: 48 }} type="number" value={alertDaysBefore} onChange={e => setAlertDaysBefore(e.target.value)} />
+              <span style={{ fontSize: "13px", color: "var(--text-3)" }}>jours</span>
             </div>
           </Row>
         </Section>
@@ -323,7 +340,7 @@ export default function Settings() {
             <Toggle value={!showCA} onChange={v => setShowCA(!v)} />
           </Row>
           <Row label="Devise" border>
-            <select className="text-sm text-gray-500 bg-transparent outline-none"
+            <select style={{ fontSize: "13px", color: "var(--text-2)", background: "transparent", outline: "none", border: "none", cursor: "pointer" }}
               value={currency} onChange={e => setCurrency(e.target.value)}>
               <option value="EUR">EUR €</option>
               <option value="CHF">CHF ₣</option>
@@ -331,7 +348,7 @@ export default function Settings() {
             </select>
           </Row>
           <Row label="Format de date" border>
-            <select className="text-sm text-gray-500 bg-transparent outline-none"
+            <select style={{ fontSize: "13px", color: "var(--text-2)", background: "transparent", outline: "none", border: "none", cursor: "pointer" }}
               value={dateFormat} onChange={e => setDateFormat(e.target.value)}>
               <option value="dd/mm/yyyy">JJ/MM/AAAA</option>
               <option value="mm/dd/yyyy">MM/JJ/AAAA</option>
@@ -339,7 +356,7 @@ export default function Settings() {
             </select>
           </Row>
           <Row label="Début de semaine" border={false}>
-            <select className="text-sm text-gray-500 bg-transparent outline-none"
+            <select style={{ fontSize: "13px", color: "var(--text-2)", background: "transparent", outline: "none", border: "none", cursor: "pointer" }}
               value={weekStart} onChange={e => setWeekStart(e.target.value)}>
               <option value="monday">Lundi</option>
               <option value="sunday">Dimanche</option>
@@ -347,29 +364,34 @@ export default function Settings() {
           </Row>
         </Section>
 
-        {/* Équipe — visible admin uniquement */}
+        {/* Équipe */}
         {isAdmin && (
           <Section title="Équipe">
-            {members.map(m => (
-              <div key={m.id} className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-                <div>
-                  <p className="text-sm font-semibold text-[#1a1a2e]">{m.email}</p>
-                  <span className={`inline-block text-xs px-2 py-0.5 rounded-full mt-0.5 font-medium ${ROLE_COLORS[m.role] || "bg-gray-100 text-gray-600"}`}>
-                    {ROLE_LABELS[m.role] || m.role}
-                  </span>
+            {members.map(m => {
+              const rs = ROLE_STYLES[m.role] || { bg: "var(--surface-2)", color: "var(--text-3)" };
+              return (
+                <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 16px", borderBottom: "1px solid var(--border)" }}>
+                  <div>
+                    <p style={{ fontSize: "13.5px", fontWeight: 500, color: "var(--text)", margin: 0 }}>{m.email}</p>
+                    <span style={{ display: "inline-block", fontSize: "11px", padding: "2px 7px", borderRadius: "99px", marginTop: 3, fontWeight: 500, background: rs.bg, color: rs.color }}>
+                      {ROLE_LABELS[m.role] || m.role}
+                    </span>
+                  </div>
+                  {m.id !== user?.id && (
+                    <button
+                      onClick={() => { if (confirm(`Retirer ${m.email} de l'équipe ?`)) removeMutation.mutate(m.id); }}
+                      style={{ fontSize: "12.5px", color: "var(--danger)", background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: "6px" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "var(--danger-bg)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "none"}
+                    >
+                      Retirer
+                    </button>
+                  )}
                 </div>
-                {m.id !== user?.id && (
-                  <button
-                    onClick={() => { if (confirm(`Retirer ${m.email} de l'équipe ?`)) removeMutation.mutate(m.id); }}
-                    className="text-red-400 text-xs px-2 py-1 rounded hover:bg-red-50"
-                  >
-                    Retirer
-                  </button>
-                )}
-              </div>
-            ))}
+              );
+            })}
             <button
-              className="w-full px-4 py-3 text-left text-sm font-semibold text-[#3fa9f5]"
+              style={{ width: "100%", padding: "12px 16px", textAlign: "left", fontSize: "13.5px", fontWeight: 500, color: "var(--brand)", background: "none", border: "none", cursor: "pointer" }}
               onClick={() => { setInviteModal(true); setInviteLink(null); setInviteEmail(""); }}
             >
               + Inviter un membre
@@ -379,87 +401,77 @@ export default function Settings() {
 
         {/* Compte */}
         <Section title="Compte">
-          <button className="w-full" onClick={() => setPwModal(true)}>
+          <button style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={() => setPwModal(true)}>
             <Row label="Changer le mot de passe" border>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3fa9f5" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
             </Row>
           </button>
-          <button className="w-full" onClick={() => exportRidesCSV({})}>
+          <button style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={() => exportRidesCSV({})}>
             <Row label="Exporter toutes les courses" sub="Télécharge un fichier CSV" border>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3fa9f5" strokeWidth="2" strokeLinecap="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
             </Row>
           </button>
           <Row label="Supprimer le compte" sub="Action irréversible" border={false}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--border-strong)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
           </Row>
         </Section>
 
-        {/* Sauvegarde */}
-        <button onClick={handleSave} disabled={mutation.isPending}
-          className={`w-full rounded-xl py-4 text-sm font-bold mb-3 transition-all ${
-            saved ? "bg-green-500 text-white" : "bg-[#3fa9f5] text-white disabled:opacity-60"
-          }`}>
+        {/* Boutons */}
+        <button
+          onClick={handleSave}
+          disabled={mutation.isPending}
+          style={{
+            width: "100%", padding: "12px", borderRadius: "10px", fontSize: "13.5px", fontWeight: 600,
+            border: "none", cursor: "pointer", marginBottom: "10px",
+            background: saved ? "var(--success)" : "var(--brand)",
+            color: "white", opacity: mutation.isPending ? 0.6 : 1,
+          }}
+          onMouseEnter={e => { if (!mutation.isPending && !saved) e.currentTarget.style.background = "var(--brand-hover)"; }}
+          onMouseLeave={e => { if (!saved) e.currentTarget.style.background = "var(--brand)"; }}
+        >
           {mutation.isPending ? "Enregistrement..." : saved ? "Modifications enregistrées ✓" : "Sauvegarder les modifications"}
         </button>
 
-        <button onClick={() => { signOut(); navigate("/"); }}
-          className="w-full border border-red-200 text-red-400 rounded-xl py-3.5 text-sm font-semibold">
+        <button
+          onClick={() => { signOut(); navigate("/"); }}
+          style={{ width: "100%", padding: "11px", borderRadius: "10px", fontSize: "13.5px", fontWeight: 500, border: "1px solid #fecaca", background: "transparent", color: "var(--danger)", cursor: "pointer" }}
+          onMouseEnter={e => e.currentTarget.style.background = "var(--danger-bg)"}
+          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+        >
           Se déconnecter
         </button>
       </div>
-      {/* Modal changement mot de passe */}
+
+      {/* Modal mot de passe */}
       {pwModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={() => setPwModal(false)}>
-          <div className="bg-white rounded-t-2xl w-full max-w-lg p-5" onClick={e => e.stopPropagation()}>
-            <p className="text-base font-black text-[#1a1a2e] mb-4">Changer le mot de passe</p>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Mot de passe actuel</label>
-                <input
-                  type="password"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-                  value={pwCurrent}
-                  onChange={e => setPwCurrent(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Nouveau mot de passe</label>
-                <input
-                  type="password"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-                  value={pwNew}
-                  onChange={e => setPwNew(e.target.value)}
-                  placeholder="6 caractères minimum"
-                  autoComplete="new-password"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Confirmer le nouveau mot de passe</label>
-                <input
-                  type="password"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-                  value={pwConfirm}
-                  onChange={e => setPwConfirm(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
-              </div>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setPwModal(false)}>
+          <div className="animate-slide-up" style={{ background: "var(--surface)", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: "480px", padding: "24px" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
+            <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>Changer le mot de passe</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {[
+                { label: "Mot de passe actuel", val: pwCurrent, set: setPwCurrent, ac: "current-password" },
+                { label: "Nouveau mot de passe", val: pwNew, set: setPwNew, ac: "new-password", ph: "6 caractères minimum" },
+                { label: "Confirmer le nouveau mot de passe", val: pwConfirm, set: setPwConfirm, ac: "new-password" },
+              ].map(({ label, val, set, ac, ph }) => (
+                <div key={label}>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
+                  <input type="password" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                    value={val} onChange={e => set(e.target.value)} placeholder={ph || "••••••••"} autoComplete={ac}
+                    onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+                </div>
+              ))}
             </div>
-            <div className="flex gap-2 mt-5">
-              <button
-                onClick={() => { setPwModal(false); setPwCurrent(""); setPwNew(""); setPwConfirm(""); }}
-                className="flex-1 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-500">
+            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+              <button onClick={() => { setPwModal(false); setPwCurrent(""); setPwNew(""); setPwConfirm(""); }}
+                style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500, border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", cursor: "pointer" }}>
                 Annuler
               </button>
-              <button
-                onClick={handleChangePassword}
-                disabled={pwLoading || !pwCurrent || !pwNew || !pwConfirm}
-                className="flex-1 bg-[#3fa9f5] text-white rounded-xl py-3 text-sm font-bold disabled:opacity-50">
+              <button onClick={handleChangePassword} disabled={pwLoading || !pwCurrent || !pwNew || !pwConfirm}
+                style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 600, border: "none", background: "var(--brand)", color: "white", cursor: "pointer", opacity: (pwLoading || !pwCurrent || !pwNew || !pwConfirm) ? 0.5 : 1 }}>
                 {pwLoading ? "Modification..." : "Modifier"}
               </button>
             </div>
@@ -469,60 +481,49 @@ export default function Settings() {
 
       {/* Modal invitation */}
       {inviteModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={() => setInviteModal(false)}>
-          <div className="bg-white rounded-t-2xl w-full max-w-lg p-5" onClick={e => e.stopPropagation()}>
-            <p className="text-base font-black text-[#1a1a2e] mb-4">Inviter un membre</p>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setInviteModal(false)}>
+          <div className="animate-slide-up" style={{ background: "var(--surface)", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: "480px", padding: "24px" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
+            <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>Inviter un membre</p>
             {!inviteLink ? (
-              <div className="space-y-3">
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Email</label>
-                  <input
-                    type="email"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-                    value={inviteEmail}
-                    onChange={e => setInviteEmail(e.target.value)}
-                    placeholder="prenom@email.com"
-                  />
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Email</label>
+                  <input type="email" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                    value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="prenom@email.com"
+                    onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 block mb-1">Rôle</label>
-                  <select
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none"
-                    value={inviteRole}
-                    onChange={e => setInviteRole(e.target.value)}
-                  >
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Rôle</label>
+                  <select style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box", cursor: "pointer" }}
+                    value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
                     <option value="admin">Admin — accès complet</option>
                     <option value="manager">Manager — saisie et modification</option>
                     <option value="readonly">Lecture seule — consultation uniquement</option>
                   </select>
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <button onClick={() => setInviteModal(false)}
-                    className="flex-1 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-500">
+                <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+                  <button onClick={() => setInviteModal(false)} style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500, border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", cursor: "pointer" }}>
                     Annuler
                   </button>
-                  <button
-                    onClick={() => inviteMutation.mutate()}
-                    disabled={!inviteEmail || inviteMutation.isPending}
-                    className="flex-1 bg-[#3fa9f5] text-white rounded-xl py-3 text-sm font-bold disabled:opacity-50">
+                  <button onClick={() => inviteMutation.mutate()} disabled={!inviteEmail || inviteMutation.isPending}
+                    style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 600, border: "none", background: "var(--brand)", color: "white", cursor: "pointer", opacity: (!inviteEmail || inviteMutation.isPending) ? 0.5 : 1 }}>
                     {inviteMutation.isPending ? "Génération..." : "Générer le lien"}
                   </button>
                 </div>
               </div>
             ) : (
               <div>
-                <p className="text-sm text-gray-500 mb-3">Lien d'invitation généré — valable 7 jours :</p>
-                <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-3 text-xs font-mono text-gray-700 break-all mb-4">
+                <p style={{ fontSize: "13px", color: "var(--text-2)", margin: "0 0 10px" }}>Lien d'invitation — valable 7 jours :</p>
+                <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "9px", padding: "10px 12px", fontSize: "12px", fontFamily: "monospace", color: "var(--text-2)", wordBreak: "break-all", marginBottom: "14px" }}>
                   {inviteLink}
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(inviteLink); toast("Lien copié !", "success"); }}
-                    className="flex-1 bg-[#3fa9f5] text-white rounded-xl py-3 text-sm font-bold">
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button onClick={() => { navigator.clipboard.writeText(inviteLink); toast("Lien copié !", "success"); }}
+                    style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 600, border: "none", background: "var(--brand)", color: "white", cursor: "pointer" }}>
                     Copier le lien
                   </button>
-                  <button onClick={() => setInviteModal(false)}
-                    className="flex-1 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-500">
+                  <button onClick={() => setInviteModal(false)} style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500, border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", cursor: "pointer" }}>
                     Fermer
                   </button>
                 </div>
@@ -532,7 +533,6 @@ export default function Settings() {
         </div>
       )}
 
-      <BottomNav />
-    </div>
+    </Layout>
   );
 }

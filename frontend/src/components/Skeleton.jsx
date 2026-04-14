@@ -1,14 +1,30 @@
-function Pulse({ className }) {
-  return <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} />;
+function Pulse({ style = {}, className = "" }) {
+  return (
+    <div
+      className={`animate-pulse ${className}`}
+      style={{
+        background: "linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)",
+        backgroundSize: "200% 100%",
+        animation: "shimmer 1.4s ease-in-out infinite, pulse 2s cubic-bezier(0.4,0,0.6,1) infinite",
+        borderRadius: "6px",
+        ...style,
+      }}
+    />
+  );
 }
 
 export function SkeletonKpiCards() {
   return (
-    <div className="grid grid-cols-2 gap-3 mb-5">
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "20px" }}>
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
-          <Pulse className="h-3 w-16 mb-2" />
-          <Pulse className="h-7 w-20" />
+        <div key={i} style={{
+          background: "var(--surface)",
+          borderRadius: "12px",
+          border: "1px solid var(--border)",
+          padding: "16px",
+        }}>
+          <Pulse style={{ height: 11, width: 80, marginBottom: 10 }} />
+          <Pulse style={{ height: 28, width: 70 }} />
         </div>
       ))}
     </div>
@@ -17,15 +33,18 @@ export function SkeletonKpiCards() {
 
 export function SkeletonList({ rows = 4 }) {
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+    <div style={{ background: "var(--surface)", borderRadius: "12px", border: "1px solid var(--border)", overflow: "hidden" }}>
       {[...Array(rows)].map((_, i) => (
-        <div key={i} className={`flex items-center gap-3 px-4 py-3 ${i < rows - 1 ? "border-b border-gray-50" : ""}`}>
-          <Pulse className="w-9 h-9 rounded-full flex-shrink-0" />
-          <div className="flex-1 space-y-1.5">
-            <Pulse className="h-3 w-32" />
-            <Pulse className="h-2.5 w-20" />
+        <div key={i} style={{
+          display: "flex", alignItems: "center", gap: 12, padding: "13px 16px",
+          borderBottom: i < rows - 1 ? "1px solid var(--border)" : "none",
+        }}>
+          <Pulse style={{ width: 36, height: 36, borderRadius: "9px", flexShrink: 0 }} />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+            <Pulse style={{ height: 12, width: 120 }} />
+            <Pulse style={{ height: 10, width: 80 }} />
           </div>
-          <Pulse className="h-3 w-12 flex-shrink-0" />
+          <Pulse style={{ height: 10, width: 40, flexShrink: 0 }} />
         </div>
       ))}
     </div>
@@ -34,17 +53,20 @@ export function SkeletonList({ rows = 4 }) {
 
 export function SkeletonRideList({ rows = 5 }) {
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+    <div style={{ background: "var(--surface)", borderRadius: "12px", border: "1px solid var(--border)", overflow: "hidden" }}>
       {[...Array(rows)].map((_, i) => (
-        <div key={i} className={`flex items-start gap-3 px-4 py-3 ${i < rows - 1 ? "border-b border-gray-50" : ""}`}>
-          <Pulse className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5" />
-          <div className="flex-1 space-y-1.5">
-            <div className="flex justify-between">
-              <Pulse className="h-3 w-28" />
-              <Pulse className="h-3 w-10 flex-shrink-0" />
+        <div key={i} style={{
+          display: "flex", alignItems: "flex-start", gap: 12, padding: "13px 16px",
+          borderBottom: i < rows - 1 ? "1px solid var(--border)" : "none",
+        }}>
+          <Pulse style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, marginTop: 6 }} />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Pulse style={{ height: 12, width: 110 }} />
+              <Pulse style={{ height: 12, width: 40, flexShrink: 0 }} />
             </div>
-            <Pulse className="h-2.5 w-36" />
-            <Pulse className="h-2.5 w-16" />
+            <Pulse style={{ height: 10, width: 140 }} />
+            <Pulse style={{ height: 10, width: 60 }} />
           </div>
         </div>
       ))}
@@ -54,16 +76,16 @@ export function SkeletonRideList({ rows = 5 }) {
 
 export function SkeletonStatCard() {
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-      <Pulse className="h-3 w-20 mb-3" />
-      <div className="space-y-2.5">
+    <div style={{ background: "var(--surface)", borderRadius: "12px", border: "1px solid var(--border)", padding: "16px", marginBottom: "12px" }}>
+      <Pulse style={{ height: 11, width: 90, marginBottom: 14 }} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {[...Array(3)].map((_, i) => (
           <div key={i}>
-            <div className="flex justify-between mb-1">
-              <Pulse className="h-2.5 w-16" />
-              <Pulse className="h-2.5 w-12" />
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <Pulse style={{ height: 10, width: 70 }} />
+              <Pulse style={{ height: 10, width: 40 }} />
             </div>
-            <Pulse className="h-2 w-full" />
+            <Pulse style={{ height: 6, width: "100%", borderRadius: "99px" }} />
           </div>
         ))}
       </div>
@@ -71,6 +93,6 @@ export function SkeletonStatCard() {
   );
 }
 
-export function SkeletonCard({ className = "h-24" }) {
-  return <Pulse className={`w-full rounded-xl ${className}`} />;
+export function SkeletonCard({ className = "", style = {} }) {
+  return <Pulse style={{ width: "100%", height: 80, borderRadius: "12px", ...style }} className={className} />;
 }

@@ -4,6 +4,47 @@ import { login, register } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 import client from "../api/client";
 
+const FEATURES = [
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+    ),
+    title: "CA en temps réel",
+    desc: "Suivez votre chiffre d'affaires au jour, semaine et mois.",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h5l3 5v3h-8V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    ),
+    title: "Gestion de flotte",
+    desc: "Statuts véhicules, alertes CT et assurance automatiques.",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      </svg>
+    ),
+    title: "Équipe chauffeurs",
+    desc: "Profils, statuts et performances par chauffeur.",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    ),
+    title: "Export CSV",
+    desc: "Exportez vos courses par période en un clic.",
+  },
+];
+
 export default function Login() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
@@ -11,6 +52,7 @@ export default function Login() {
   const [form, setForm] = useState({ company_name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,133 +69,235 @@ export default function Login() {
         headers: { Authorization: `Bearer ${data.access_token}` }
       });
       signIn(data.access_token, { name: data.company_name }, meRes.data);
-      navigate("/dashboard");
+      if (mode === "register") {
+        localStorage.setItem("onboarding_needed", "1");
+        navigate("/onboarding");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
-      setError(err.response?.data?.detail || "Erreur de connexion");
+      setError(err.response?.data?.detail || "Identifiants incorrects");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#3fa9f5] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex" }}>
 
-        {/* Logo */}
-        <div className="mb-6">
-          <div className="flex items-baseline gap-0 mb-1">
-            {/* my — noir */}
-            <span className="text-3xl font-black text-[#1a1a2e]">my</span>
-            {/* pil — bleu */}
-            <span className="text-3xl font-black text-[#3fa9f5]">pil</span>
-            {/* Volant = remplace le "o" */}
-            <svg width="26" height="26" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{marginBottom: '1px', marginLeft: '1px', marginRight: '1px'}}>
-              {/* Jante extérieure */}
-              <circle cx="16" cy="16" r="13" stroke="#3fa9f5" strokeWidth="3" fill="none"/>
-              {/* Moyeu central */}
-              <circle cx="16" cy="16" r="3.5" fill="#3fa9f5"/>
-              {/* Rayon haut */}
-              <line x1="16" y1="12.5" x2="16" y2="3" stroke="#3fa9f5" strokeWidth="2.5" strokeLinecap="round"/>
-              {/* Rayon bas-gauche */}
-              <line x1="13.5" y1="19" x2="6" y2="27" stroke="#3fa9f5" strokeWidth="2.5" strokeLinecap="round"/>
-              {/* Rayon bas-droit */}
-              <line x1="18.5" y1="19" x2="26" y2="27" stroke="#3fa9f5" strokeWidth="2.5" strokeLinecap="round"/>
-            </svg>
-            {/* t — bleu */}
-            <span className="text-3xl font-black text-[#3fa9f5]">t</span>
-          </div>
-          <p className="text-gray-400 text-sm">Gestion de flotte simplifiée</p>
+      {/* Panneau gauche — visible uniquement desktop */}
+      <div
+        className="hidden lg:flex"
+        style={{
+          width: "50%",
+          background: "var(--brand)",
+          flexDirection: "column",
+          justifyContent: "center",
+          padding: "60px 56px",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Cercles décoratifs */}
+        <div style={{
+          position: "absolute", top: -80, right: -80,
+          width: 320, height: 320, borderRadius: "50%",
+          background: "rgba(255,255,255,0.06)",
+        }} />
+        <div style={{
+          position: "absolute", bottom: -60, left: -60,
+          width: 240, height: 240, borderRadius: "50%",
+          background: "rgba(255,255,255,0.05)",
+        }} />
+
+        {/* Logo blanc */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 0, marginBottom: "40px" }}>
+          <span style={{ fontSize: 32, fontWeight: 900, color: "rgba(255,255,255,0.9)" }}>my</span>
+          <span style={{ fontSize: 32, fontWeight: 900, color: "white" }}>pil</span>
+          <svg width="26" height="26" viewBox="0 0 32 32" fill="none" style={{ marginBottom: "2px", marginLeft: "1px", marginRight: "1px" }}>
+            <circle cx="16" cy="16" r="13" stroke="white" strokeWidth="3" fill="none"/>
+            <circle cx="16" cy="16" r="3.5" fill="white"/>
+            <line x1="16" y1="12.5" x2="16" y2="3" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+            <line x1="13.5" y1="19" x2="6" y2="27" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+            <line x1="18.5" y1="19" x2="26" y2="27" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+          </svg>
+          <span style={{ fontSize: 32, fontWeight: 900, color: "white" }}>t</span>
         </div>
 
-        {/* Toggle login / register */}
-        <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
-          {[
-            { key: "login", label: "Connexion" },
-            { key: "register", label: "Créer un compte" },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => { setMode(key); setError(""); }}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                mode === key
-                  ? "bg-white shadow text-[#1a1a2e]"
-                  : "text-gray-400"
-              }`}
-            >
-              {label}
-            </button>
+        {/* Tagline */}
+        <p style={{ fontSize: "26px", fontWeight: 800, color: "white", lineHeight: 1.25, margin: "0 0 12px", maxWidth: "360px" }}>
+          Gérez votre flotte<br />sans prise de tête.
+        </p>
+        <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.75)", margin: "0 0 48px", maxWidth: "340px", lineHeight: 1.6 }}>
+          L'outil pensé pour les patrons de taxi, VTC et ambulance qui gèrent 3 à 20 véhicules.
+        </p>
+
+        {/* Features */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          {FEATURES.map((f, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: "9px",
+                background: "rgba(255,255,255,0.15)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "white", flexShrink: 0,
+              }}>
+                {f.icon}
+              </div>
+              <div>
+                <p style={{ fontSize: "14px", fontWeight: 700, color: "white", margin: "0 0 2px" }}>{f.title}</p>
+                <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.65)", margin: 0 }}>{f.desc}</p>
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {mode === "register" && (
+        {/* Tagline bas */}
+        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "48px", marginBottom: 0 }}>
+          Taxi · VTC · Ambulance / VSL
+        </p>
+      </div>
+
+      {/* Panneau droit — formulaire */}
+      <div style={{
+        flex: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px 16px",
+      }}>
+        <div className="animate-fade-in w-full" style={{ maxWidth: "380px" }}>
+
+          {/* Logo mobile uniquement */}
+          <div className="lg:hidden" style={{ marginBottom: "28px", textAlign: "center" }}>
+            <div style={{ display: "inline-flex", alignItems: "baseline", gap: 0, marginBottom: "6px" }}>
+              <span style={{ fontSize: 28, fontWeight: 900, color: "var(--text)" }}>my</span>
+              <span style={{ fontSize: 28, fontWeight: 900, color: "var(--brand)" }}>pil</span>
+              <svg width="22" height="22" viewBox="0 0 32 32" fill="none" style={{ marginBottom: "1px", marginLeft: "1px", marginRight: "1px" }}>
+                <circle cx="16" cy="16" r="13" stroke="var(--brand)" strokeWidth="3" fill="none"/>
+                <circle cx="16" cy="16" r="3.5" fill="var(--brand)"/>
+                <line x1="16" y1="12.5" x2="16" y2="3" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round"/>
+                <line x1="13.5" y1="19" x2="6" y2="27" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round"/>
+                <line x1="18.5" y1="19" x2="26" y2="27" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+              <span style={{ fontSize: 28, fontWeight: 900, color: "var(--brand)" }}>t</span>
+            </div>
+            <p style={{ fontSize: "13px", color: "var(--text-3)", margin: 0 }}>Gestion de flotte simplifiée</p>
+          </div>
+
+          {/* Titre desktop */}
+          <div className="hidden lg:block" style={{ marginBottom: "28px" }}>
+            <p style={{ fontSize: "20px", fontWeight: 800, color: "var(--text)", margin: "0 0 4px" }}>
+              {mode === "login" ? "Bienvenue !" : "Créer un compte"}
+            </p>
+            <p style={{ fontSize: "13.5px", color: "var(--text-3)", margin: 0 }}>
+              {mode === "login" ? "Connectez-vous à votre espace" : "Commencez gratuitement, sans carte bancaire"}
+            </p>
+          </div>
+
+          {/* Toggle */}
+          <div style={{
+            display: "flex", background: "var(--surface-2)", borderRadius: "10px",
+            padding: "3px", marginBottom: "24px",
+            border: "1px solid var(--border)",
+          }}>
+            {[
+              { key: "login", label: "Connexion" },
+              { key: "register", label: "Créer un compte" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => { setMode(key); setError(""); }}
+                style={{
+                  flex: 1, padding: "8px 12px", borderRadius: "8px",
+                  fontSize: "13px", fontWeight: 500, border: "none", cursor: "pointer",
+                  transition: "all 0.15s",
+                  background: mode === key ? "var(--surface)" : "transparent",
+                  color: mode === key ? "var(--text)" : "var(--text-3)",
+                  boxShadow: mode === key ? "var(--shadow-xs)" : "none",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            {mode === "register" && (
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "6px" }}>
+                  Nom de l'entreprise
+                </label>
+                <input
+                  style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "10px 13px", fontSize: "14px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                  placeholder="ex. Taxi Martin & Fils"
+                  value={form.company_name}
+                  onChange={e => set("company_name", e.target.value)}
+                  onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                  onBlur={e => e.target.style.borderColor = "var(--border)"}
+                  required
+                />
+              </div>
+            )}
+
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                Nom de l'entreprise
-              </label>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "6px" }}>Adresse email</label>
               <input
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-                placeholder="ex. Taxi Martin & Fils"
-                value={form.company_name}
-                onChange={(e) => setForm({ ...form, company_name: e.target.value })}
+                style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "10px 13px", fontSize: "14px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                type="email" placeholder="vous@entreprise.fr"
+                value={form.email} onChange={e => set("email", e.target.value)}
+                onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                onBlur={e => e.target.style.borderColor = "var(--border)"}
                 required
               />
             </div>
-          )}
 
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-              Email
-            </label>
-            <input
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-              type="email"
-              placeholder="vous@votreentreprise.fr"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              required
-            />
-          </div>
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "6px" }}>Mot de passe</label>
+              <input
+                style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "10px 13px", fontSize: "14px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                type="password" placeholder="••••••••"
+                value={form.password} onChange={e => set("password", e.target.value)}
+                onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                onBlur={e => e.target.style.borderColor = "var(--border)"}
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-              Mot de passe
-            </label>
-            <input
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-              type="password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required
-            />
-          </div>
+            {error && (
+              <div style={{ padding: "10px 13px", borderRadius: "8px", background: "var(--danger-bg)", border: "1px solid #fecaca", fontSize: "13px", color: "var(--danger)" }}>
+                {error}
+              </div>
+            )}
 
-          {error && (
-            <p className="text-red-500 text-xs bg-red-50 rounded-lg px-3 py-2">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#3fa9f5] text-white rounded-xl py-3.5 text-sm font-bold mt-2 hover:bg-[#3a7de8] transition-colors disabled:opacity-60"
-          >
-            {loading ? "..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
-          </button>
-        </form>
-
-        {mode === "login" && (
-          <p className="text-center text-xs text-gray-400 mt-4">
-            Pas encore de compte ?{" "}
             <button
-              onClick={() => setMode("register")}
-              className="text-[#3fa9f5] font-semibold"
+              type="submit" disabled={loading}
+              style={{
+                width: "100%", background: "var(--brand)", color: "white", border: "none",
+                borderRadius: "9px", padding: "11px", fontSize: "14px", fontWeight: 600,
+                cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.65 : 1, marginTop: "2px",
+              }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = "var(--brand-hover)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "var(--brand)"; }}
             >
-              Créer un compte
+              {loading ? "Connexion..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
             </button>
-          </p>
-        )}
+          </form>
+
+          {mode === "login" && (
+            <p style={{ textAlign: "center", fontSize: "12.5px", color: "var(--text-3)", marginTop: "18px", marginBottom: 0 }}>
+              Pas encore de compte ?{" "}
+              <button
+                onClick={() => setMode("register")}
+                style={{ background: "none", border: "none", color: "var(--brand)", fontWeight: 600, cursor: "pointer", fontSize: "12.5px", padding: 0 }}
+              >
+                Créer un compte
+              </button>
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

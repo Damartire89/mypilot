@@ -5,6 +5,41 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-14 — v1.0.0-demo (Redesign complet + Onboarding)
+
+### Design system
+- `[design]` Refonte complète du design system — CSS variables (--brand, --text, --surface, --border…), Inter Google Fonts, Linear/Stripe aesthetic
+- `[design]` Layout desktop — sidebar blanche 240px avec navigation, TopBar mobile redesignée sur CSS vars
+- `[design]` BottomNav — indicateur actif, CSS vars, icônes cohérentes
+- `[design]` Toast — thème clair (success/error/warning) avec bordures colorées
+- `[design]` Skeleton — shimmer animation sur CSS vars
+
+### Pages redesignées (design system CSS vars)
+- `[design]` Login — panneau gauche desktop (valeur proposition + 4 features), formulaire épuré
+- `[design]` Dashboard — KPI cards avec icônes colorées en rounded square
+- `[design]` Rides — filtres pills, FAB mobile
+- `[design]` Drivers — compteurs colorés, modal bottom sheet avec drag handle
+- `[design]` Vehicles — même pattern que Drivers
+- `[design]` Stats — carte CA brand-colored, barres semaine, progress bars répartition
+- `[design]` Settings — sections inline-styles, modales mot de passe + invitation membres
+- `[design]` NewRide / EditRide — sections Client/Facturation/Chauffeur, pills paiement
+- `[design]` DriverProfile — carte identité, navigation mois, répartition paiements
+- `[design]` SuperAdmin — grille entreprises/membres, badges rôles colorés
+- `[design]` InviteAccept — redesign complet sur CSS vars
+- `[design]` Logo.jsx — couleurs migrées sur CSS vars (var(--brand), var(--text))
+- `[design]` TopBar.jsx — redesign sur CSS vars, utilise useAuth pour les initiales
+
+### Nouvelles fonctionnalités
+- `[feature]` Composant EmptyState — illustration SVG + titre + sous-titre + CTA sur toutes les pages vides (Dashboard, Courses, Équipe, Flotte, Stats)
+- `[feature]` Onboarding wizard — 3 étapes au premier login (type activité → véhicule → chauffeur), tout skippable
+- `[feature]` Route /onboarding — déclenchée automatiquement après register, flag localStorage
+
+### Corrections
+- `[fix]` Dashboard — doublon className/style sur le div racine
+- `[fix]` TopBar — utilisait company prop statique au lieu de useAuth()
+
+---
+
 ## 2026-04-10
 
 ### Session 1 (après-midi)

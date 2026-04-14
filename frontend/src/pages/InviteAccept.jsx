@@ -40,53 +40,60 @@ export default function InviteAccept() {
     }
   }
 
+  const inputStyle = {
+    width: "100%", border: "1px solid var(--border)", borderRadius: "9px",
+    padding: "10px 13px", fontSize: "14px", background: "var(--bg)",
+    color: "var(--text)", boxSizing: "border-box", outline: "none",
+  };
+
   if (error && !invitation) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white rounded-xl p-8 shadow-sm border max-w-sm w-full text-center">
-        <div className="text-4xl mb-4">⚠️</div>
-        <p className="text-red-600 font-medium">{error}</p>
-        <p className="text-gray-400 text-sm mt-2">Demandez un nouveau lien à l'administrateur.</p>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", padding: "16px" }}>
+      <div style={{ background: "var(--surface)", borderRadius: "16px", padding: "40px 32px", border: "1px solid var(--border)", maxWidth: "360px", width: "100%", textAlign: "center" }}>
+        <p style={{ fontSize: "32px", margin: "0 0 12px" }}>⚠️</p>
+        <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--danger)", margin: "0 0 8px" }}>{error}</p>
+        <p style={{ fontSize: "13px", color: "var(--text-3)", margin: 0 }}>Demandez un nouveau lien à l'administrateur.</p>
       </div>
     </div>
   );
 
   if (!invitation) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <p className="text-gray-400">Vérification du lien...</p>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
+      <p style={{ fontSize: "13px", color: "var(--text-3)" }}>Vérification du lien...</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#3fa9f5] p-4">
-      <div className="bg-white rounded-2xl p-8 shadow-xl max-w-sm w-full">
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--brand)", padding: "16px" }}>
+      <div className="animate-fade-in" style={{ background: "var(--surface)", borderRadius: "20px", padding: "32px", maxWidth: "380px", width: "100%", boxShadow: "var(--shadow-md)" }}>
+
         {/* Logo */}
-        <div className="mb-6">
-          <div className="flex items-baseline gap-0 mb-1">
-            <span className="text-2xl font-black text-[#1a1a2e]">my</span>
-            <span className="text-2xl font-black text-[#3fa9f5]">pilot</span>
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 0, marginBottom: "4px" }}>
+            <span style={{ fontSize: 24, fontWeight: 900, color: "var(--text)" }}>my</span>
+            <span style={{ fontSize: 24, fontWeight: 900, color: "var(--brand)" }}>pilot</span>
           </div>
-          <p className="text-gray-400 text-sm">Gestion de flotte simplifiée</p>
+          <p style={{ fontSize: "13px", color: "var(--text-3)", margin: 0 }}>Gestion de flotte simplifiée</p>
         </div>
 
-        <h1 className="text-lg font-bold text-gray-900 mb-1">Vous êtes invité(e) !</h1>
-        <p className="text-sm text-gray-500 mb-6">
-          Rejoignez <strong className="text-gray-900">{invitation.company_name}</strong> en tant que{" "}
-          <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
+        <p style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)", margin: "0 0 6px" }}>Vous êtes invité(e) !</p>
+        <p style={{ fontSize: "13px", color: "var(--text-2)", margin: "0 0 24px", lineHeight: 1.5 }}>
+          Rejoignez <strong style={{ color: "var(--text)" }}>{invitation.company_name}</strong> en tant que{" "}
+          <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "99px", background: "var(--brand-light)", color: "var(--brand)" }}>
             {ROLE_LABELS[invitation.role] || invitation.role}
           </span>
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Email</label>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Email</label>
             <input
               value={invitation.email}
               disabled
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 text-gray-500 text-sm"
+              style={{ ...inputStyle, background: "var(--surface-2)", color: "var(--text-3)" }}
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>
               Choisir un mot de passe
             </label>
             <input
@@ -95,16 +102,27 @@ export default function InviteAccept() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="6 caractères minimum"
               required
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#3fa9f5]"
+              style={inputStyle}
+              onFocus={e => e.target.style.borderColor = "var(--brand)"}
+              onBlur={e => e.target.style.borderColor = "var(--border)"}
             />
           </div>
           {error && (
-            <p className="text-red-500 text-xs bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            <div style={{ background: "var(--danger-bg)", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 13px" }}>
+              <p style={{ fontSize: "13px", color: "var(--danger)", margin: 0 }}>{error}</p>
+            </div>
           )}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#3fa9f5] text-white py-3.5 rounded-xl text-sm font-bold hover:bg-[#3a7de8] transition-colors disabled:opacity-50"
+            style={{
+              width: "100%", padding: "12px", borderRadius: "9px",
+              background: "var(--brand)", color: "white",
+              fontSize: "14px", fontWeight: 600, border: "none",
+              cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.65 : 1,
+            }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = "var(--brand-hover)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "var(--brand)"; }}
           >
             {loading ? "Création du compte..." : "Créer mon compte"}
           </button>

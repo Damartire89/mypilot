@@ -1,24 +1,24 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import TopBar from "../components/TopBar";
-import BottomNav from "../components/BottomNav";
+import Layout from "../components/Layout";
 import { SkeletonList } from "../components/Skeleton";
+import EmptyState from "../components/EmptyState";
 import { getVehicles, createVehicle, updateVehicle, deleteVehicle } from "../api/vehicles";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
 
 const STATUS = {
-  available: { label: "Disponible", dot: "bg-green-400", badge: "bg-green-50 text-green-600" },
-  in_use: { label: "En course", dot: "bg-blue-400", badge: "bg-blue-50 text-blue-600" },
-  maintenance: { label: "Maintenance", dot: "bg-orange-400", badge: "bg-orange-50 text-orange-600" },
+  available:   { label: "Disponible",  bg: "var(--success-bg)", color: "var(--success)" },
+  in_use:      { label: "En course",   bg: "var(--brand-light)", color: "var(--brand)" },
+  maintenance: { label: "Maintenance", bg: "var(--warning-bg)", color: "var(--warning)" },
 };
 
 function alertLabel(alert) {
   if (!alert) return null;
-  if (alert === "expired") return { text: "Expiré !", color: "text-red-500 bg-red-50" };
+  if (alert === "expired") return { text: "Expiré !", danger: true };
   const days = parseInt(alert.split("_").pop());
-  if (days === 0) return { text: "Expire aujourd'hui !", color: "text-red-500 bg-red-50" };
-  return { text: `Expire dans ${days}j`, color: days <= 7 ? "text-red-500 bg-red-50" : "text-orange-500 bg-orange-50" };
+  if (days === 0) return { text: "Expire aujourd'hui !", danger: true };
+  return { text: `Expire dans ${days}j`, danger: days <= 7 };
 }
 
 function VehicleModal({ vehicle, onClose, onSave }) {
@@ -34,71 +34,83 @@ function VehicleModal({ vehicle, onClose, onSave }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
-      <div className="bg-white rounded-t-2xl w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <p className="text-base font-black text-[#1a1a2e] mb-4">{vehicle ? "Modifier le véhicule" : "Nouveau véhicule"}</p>
-        <div className="space-y-3">
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+      onClick={onClose}
+    >
+      <div
+        className="animate-slide-up"
+        style={{ background: "var(--surface)", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: "480px", padding: "24px", maxHeight: "90vh", overflowY: "auto" }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
+        <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>
+          {vehicle ? "Modifier le véhicule" : "Nouveau véhicule"}
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "13px" }}>
           <div>
-            <label className="text-xs font-semibold text-gray-500 block mb-1">Immatriculation *</label>
-            <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5] uppercase"
-              value={form.plate} onChange={e => set("plate", e.target.value.toUpperCase())}
-              placeholder="AB-123-CD" required />
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Immatriculation *</label>
+            <input
+              style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box", textTransform: "uppercase" }}
+              value={form.plate} onChange={e => set("plate", e.target.value.toUpperCase())} placeholder="AB-123-CD" required
+              onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"}
+            />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-gray-500 block mb-1">Marque</label>
-              <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-                value={form.brand} onChange={e => set("brand", e.target.value)} placeholder="Renault" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 block mb-1">Modèle</label>
-              <input className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-                value={form.model} onChange={e => set("model", e.target.value)} placeholder="Trafic" />
-            </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            {[{ k: "brand", label: "Marque", ph: "Renault" }, { k: "model", label: "Modèle", ph: "Trafic" }].map(({ k, label, ph }) => (
+              <div key={k}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
+                <input style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                  value={form[k]} onChange={e => set(k, e.target.value)} placeholder={ph}
+                  onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+              </div>
+            ))}
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 block mb-1">Année</label>
-            <input type="number" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-              value={form.year} onChange={e => set("year", e.target.value)}
-              placeholder="2023" min="1990" max="2030" />
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Année</label>
+            <input type="number" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+              value={form.year} onChange={e => set("year", e.target.value)} placeholder="2023" min="1990" max="2030"
+              onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
           </div>
           {vehicle && (
             <div>
-              <label className="text-xs font-semibold text-gray-500 block mb-1">Statut</label>
-              <div className="flex gap-2">
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Statut</label>
+              <div style={{ display: "flex", gap: "6px" }}>
                 {Object.entries(STATUS).map(([k, v]) => (
                   <button key={k} type="button" onClick={() => set("status", k)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                      form.status === k ? `${v.badge} border-current` : "border-gray-200 text-gray-400"
-                    }`}>
+                    style={{
+                      flex: 1, padding: "8px", borderRadius: "8px", fontSize: "11.5px", fontWeight: 500,
+                      border: form.status === k ? `1px solid ${v.color}` : "1px solid var(--border)",
+                      background: form.status === k ? v.bg : "transparent",
+                      color: form.status === k ? v.color : "var(--text-3)", cursor: "pointer",
+                    }}>
                     {v.label}
                   </button>
                 ))}
               </div>
             </div>
           )}
-          <div className="border-t border-gray-100 pt-3">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Documents & alertes</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Contrôle technique</label>
-                <input type="date" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-                  value={form.ct_expiry} onChange={e => set("ct_expiry", e.target.value)} />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Expiration assurance</label>
-                <input type="date" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:border-[#3fa9f5]"
-                  value={form.insurance_expiry} onChange={e => set("insurance_expiry", e.target.value)} />
-              </div>
+          <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
+            <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>Documents & alertes</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              {[{ k: "ct_expiry", label: "Contrôle technique" }, { k: "insurance_expiry", label: "Expiration assurance" }].map(({ k, label }) => (
+                <div key={k}>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
+                  <input type="date" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                    value={form[k]} onChange={e => set(k, e.target.value)}
+                    onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+                </div>
+              ))}
             </div>
           </div>
         </div>
-        <div className="flex gap-2 mt-5">
-          <button onClick={onClose} className="flex-1 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-500">
+
+        <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+          <button onClick={onClose} style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500, border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", cursor: "pointer" }}>
             Annuler
           </button>
-          <button onClick={() => onSave(form)} disabled={!form.plate}
-            className="flex-1 bg-[#3fa9f5] text-white rounded-xl py-3 text-sm font-bold disabled:opacity-50">
+          <button onClick={() => onSave(form)} disabled={!form.plate} style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 600, border: "none", background: "var(--brand)", color: "white", cursor: !form.plate ? "not-allowed" : "pointer", opacity: !form.plate ? 0.5 : 1 }}>
             {vehicle ? "Enregistrer" : "Ajouter"}
           </button>
         </div>
@@ -117,30 +129,17 @@ export default function Vehicles() {
 
   const addMutation = useMutation({
     mutationFn: createVehicle,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["vehicles"] });
-      setModal(null);
-      toast("Véhicule ajouté", "success");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["vehicles"] }); setModal(null); toast("Véhicule ajouté", "success"); },
     onError: () => toast("Erreur lors de l'ajout", "error"),
   });
-
   const editMutation = useMutation({
     mutationFn: ({ id, data }) => updateVehicle(id, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["vehicles"] });
-      setModal(null);
-      toast("Véhicule mis à jour", "success");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["vehicles"] }); setModal(null); toast("Véhicule mis à jour", "success"); },
     onError: () => toast("Erreur lors de la modification", "error"),
   });
-
   const deleteMutation = useMutation({
     mutationFn: deleteVehicle,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["vehicles"] });
-      toast("Véhicule supprimé", "success");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["vehicles"] }); toast("Véhicule supprimé", "success"); },
     onError: () => toast("Erreur lors de la suppression", "error"),
   });
 
@@ -150,145 +149,126 @@ export default function Vehicles() {
     if (!data.insurance_expiry) delete data.insurance_expiry;
     if (!data.year) delete data.year;
     else data.year = parseInt(data.year);
-
-    if (modal === "new") {
-      addMutation.mutate(data);
-    } else {
-      editMutation.mutate({ id: modal.id, data });
-    }
+    if (modal === "new") addMutation.mutate(data);
+    else editMutation.mutate({ id: modal.id, data });
   };
 
-  const available = vehicles.filter(v => v.status === "available").length;
-  const inUse = vehicles.filter(v => v.status === "in_use").length;
+  const available   = vehicles.filter(v => v.status === "available").length;
+  const inUse       = vehicles.filter(v => v.status === "in_use").length;
   const maintenance = vehicles.filter(v => v.status === "maintenance").length;
-
-  const hasAlerts = vehicles.filter(v => v.ct_alert || v.insurance_alert);
+  const hasAlerts   = vehicles.filter(v => v.ct_alert || v.insurance_alert);
 
   return (
-    <div className="max-w-lg mx-auto pb-20 bg-gray-50 min-h-screen">
-      <TopBar company={company?.name || "myPilot"} />
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-lg font-black text-[#1a1a2e]">Flotte</p>
-          <button onClick={() => setModal("new")}
-            className="bg-[#3fa9f5] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+    <Layout title="Flotte">
+      <div className="max-w-2xl mx-auto p-4 lg:p-6 animate-fade-in">
+
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+          <p style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>Flotte</p>
+          <button onClick={() => setModal("new")} style={{ display: "flex", alignItems: "center", gap: "5px", background: "var(--brand)", color: "white", padding: "6px 12px", borderRadius: "7px", fontSize: "12.5px", fontWeight: 600, border: "none", cursor: "pointer" }}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--brand-hover)"} onMouseLeave={e => e.currentTarget.style.background = "var(--brand)"}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             Ajouter
           </button>
         </div>
 
-        {/* Résumé flotte */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="bg-[#3fa9f5] rounded-xl p-3 text-center">
-            <p className="text-xl font-black text-white">{available}</p>
-            <p className="text-xs text-white/80 font-medium">Disponibles</p>
-          </div>
-          <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-            <p className="text-xl font-black text-blue-500">{inUse}</p>
-            <p className="text-xs text-gray-400 font-medium">En course</p>
-          </div>
-          <div className="bg-white rounded-xl p-3 text-center shadow-sm">
-            <p className="text-xl font-black text-orange-400">{maintenance}</p>
-            <p className="text-xs text-gray-400 font-medium">Maintenance</p>
-          </div>
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "16px" }}>
+          {[
+            { label: "Disponibles",  value: available,   color: "var(--success)", bg: "var(--success-bg)" },
+            { label: "En course",    value: inUse,       color: "var(--brand)",   bg: "var(--brand-light)" },
+            { label: "Maintenance",  value: maintenance, color: "var(--warning)", bg: "var(--warning-bg)" },
+          ].map(s => (
+            <div key={s.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "12px", textAlign: "center" }}>
+              <p style={{ fontSize: "22px", fontWeight: 800, color: s.color, margin: 0, lineHeight: 1 }}>{s.value}</p>
+              <p style={{ fontSize: "11px", color: "var(--text-3)", margin: "4px 0 0", fontWeight: 500 }}>{s.label}</p>
+            </div>
+          ))}
         </div>
 
         {/* Alertes documents */}
         {hasAlerts.length > 0 && (
-          <div className="bg-red-50 border border-red-100 rounded-xl p-3 mb-4">
-            <p className="text-xs font-bold text-red-600 mb-2">Documents à renouveler</p>
-            {hasAlerts.map(v => (
-              <div key={v.id} className="text-xs text-red-500 flex items-center gap-2 mb-1">
-                <span className="font-semibold">{v.plate}</span>
-                {v.ct_alert && <span className="bg-red-100 px-2 py-0.5 rounded-full">CT: {alertLabel(v.ct_alert)?.text}</span>}
-                {v.insurance_alert && <span className="bg-red-100 px-2 py-0.5 rounded-full">Assurance: {alertLabel(v.insurance_alert)?.text}</span>}
-              </div>
-            ))}
+          <div style={{ background: "var(--danger-bg)", border: "1px solid #fecaca", borderRadius: "10px", padding: "12px 14px", marginBottom: "16px" }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--danger)", margin: "0 0 8px" }}>Documents à renouveler</p>
+            {hasAlerts.map(v => {
+              const ct = alertLabel(v.ct_alert);
+              const ins = alertLabel(v.insurance_alert);
+              return (
+                <div key={v.id} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "var(--danger)", marginBottom: "4px" }}>
+                  <span style={{ fontWeight: 600 }}>{v.plate}</span>
+                  {ct && <span style={{ background: "#fecaca", padding: "1px 7px", borderRadius: "99px", fontSize: "11px" }}>CT: {ct.text}</span>}
+                  {ins && <span style={{ background: "#fecaca", padding: "1px 7px", borderRadius: "99px", fontSize: "11px" }}>Assurance: {ins.text}</span>}
+                </div>
+              );
+            })}
           </div>
         )}
 
         {isLoading && <SkeletonList rows={3} />}
 
         {!isLoading && vehicles.length === 0 && (
-          <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm">
-            <svg className="w-10 h-10 mx-auto mb-3 text-gray-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h5l3 5v3h-8V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
-            </svg>
-            <p className="text-sm mb-2">Aucun véhicule enregistré</p>
-            <button onClick={() => setModal("new")} className="text-[#3fa9f5] text-xs font-semibold">
-              + Ajouter le premier véhicule
-            </button>
-          </div>
+          <EmptyState
+            icon="vehicles"
+            title="Aucun véhicule dans la flotte"
+            subtitle="Ajoutez vos véhicules pour suivre leur statut, les alertes CT et assurance en temps réel."
+            action={{ label: "+ Ajouter un véhicule", onClick: () => setModal("new") }}
+          />
         )}
 
         {vehicles.length > 0 && (
           <>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Véhicules ({vehicles.length})</p>
-            <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+            <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>
+              Véhicules ({vehicles.length})
+            </p>
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
               {vehicles.map((vehicle, i) => {
                 const s = STATUS[vehicle.status] || STATUS.available;
                 const ctAlert = alertLabel(vehicle.ct_alert);
                 const insAlert = alertLabel(vehicle.insurance_alert);
                 return (
-                  <div key={vehicle.id}
-                    className={`px-4 py-3.5 ${i < vehicles.length - 1 ? "border-b border-gray-50" : ""}`}>
-                    <div className="flex items-start gap-3">
-                      {/* Icône voiture */}
-                      <div className="w-10 h-10 rounded-xl bg-[#3fa9f5]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3fa9f5" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h5l3 5v3h-8V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
-                        </svg>
+                  <div key={vehicle.id} style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "13px 14px", borderBottom: i < vehicles.length - 1 ? "1px solid var(--border)" : "none" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "9px", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h5l3 5v3h-8V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "7px", flexWrap: "wrap" }}>
+                        <p style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--text)", margin: 0, letterSpacing: "0.03em" }}>{vehicle.plate}</p>
+                        <span style={{ fontSize: "11px", fontWeight: 500, padding: "2px 7px", borderRadius: "99px", background: s.bg, color: s.color }}>{s.label}</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-bold text-[#1a1a2e] tracking-wide">{vehicle.plate}</p>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${s.badge}`}>
-                            {s.label}
-                          </span>
+                      <p style={{ fontSize: "12px", color: "var(--text-3)", margin: "3px 0 0" }}>
+                        {[vehicle.brand, vehicle.model, vehicle.year].filter(Boolean).join(" · ")}
+                      </p>
+                      {(ctAlert || insAlert) && (
+                        <div style={{ display: "flex", gap: "5px", marginTop: "5px", flexWrap: "wrap" }}>
+                          {ctAlert && <span style={{ fontSize: "11px", fontWeight: 500, padding: "2px 7px", borderRadius: "99px", background: ctAlert.danger ? "var(--danger-bg)" : "var(--warning-bg)", color: ctAlert.danger ? "var(--danger)" : "var(--warning)" }}>CT: {ctAlert.text}</span>}
+                          {insAlert && <span style={{ fontSize: "11px", fontWeight: 500, padding: "2px 7px", borderRadius: "99px", background: insAlert.danger ? "var(--danger-bg)" : "var(--warning-bg)", color: insAlert.danger ? "var(--danger)" : "var(--warning)" }}>Assurance: {insAlert.text}</span>}
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {[vehicle.brand, vehicle.model, vehicle.year].filter(Boolean).join(" · ")}
+                      )}
+                      {!ctAlert && !insAlert && vehicle.ct_expiry && (
+                        <p style={{ fontSize: "11.5px", color: "var(--text-3)", margin: "3px 0 0" }}>
+                          CT: {vehicle.ct_expiry.split("-").reverse().join("/")}
+                          {vehicle.insurance_expiry && ` · Assur.: ${vehicle.insurance_expiry.split("-").reverse().join("/")}`}
                         </p>
-                        {(ctAlert || insAlert) && (
-                          <div className="flex flex-wrap gap-1 mt-1.5">
-                            {ctAlert && (
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ctAlert.color}`}>
-                                CT: {ctAlert.text}
-                              </span>
-                            )}
-                            {insAlert && (
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${insAlert.color}`}>
-                                Assurance: {insAlert.text}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        {!ctAlert && !insAlert && vehicle.ct_expiry && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            CT: {vehicle.ct_expiry.split("-").reverse().join("/")}
-                            {vehicle.insurance_expiry && ` · Assur.: ${vehicle.insurance_expiry.split("-").reverse().join("/")}`}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-2 items-center flex-shrink-0">
-                        <button onClick={() => setModal(vehicle)}
-                          className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                          </svg>
-                        </button>
-                        <button onClick={() => {
-                          if (confirm(`Supprimer le véhicule ${vehicle.plate} ?`)) deleteMutation.mutate(vehicle.id);
-                        }} className="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round">
-                            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                            <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                          </svg>
-                        </button>
-                      </div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+                      <button onClick={() => setModal(vehicle)} style={{ width: 30, height: 30, borderRadius: "7px", background: "var(--surface-2)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" strokeWidth="2" strokeLinecap="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                      <button onClick={() => { if (confirm(`Supprimer ${vehicle.plate} ?`)) deleteMutation.mutate(vehicle.id); }}
+                        style={{ width: 30, height: 30, borderRadius: "7px", background: "var(--danger-bg)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                          <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 );
@@ -299,14 +279,8 @@ export default function Vehicles() {
       </div>
 
       {modal && (
-        <VehicleModal
-          vehicle={modal === "new" ? null : modal}
-          onClose={() => setModal(null)}
-          onSave={handleSave}
-        />
+        <VehicleModal vehicle={modal === "new" ? null : modal} onClose={() => setModal(null)} onSave={handleSave} />
       )}
-
-      <BottomNav />
-    </div>
+    </Layout>
   );
 }

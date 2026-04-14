@@ -11,6 +11,7 @@ import EditRide from "./pages/EditRide";
 import DriverProfile from "./pages/DriverProfile";
 import SuperAdmin from "./pages/SuperAdmin";
 import InviteAccept from "./pages/InviteAccept";
+import Onboarding from "./pages/Onboarding";
 import { useAuth } from "./context/AuthContext";
 
 function PrivateRoute({ children }) {
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="/stats" element={<PrivateRoute><Stats /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
         <Route path="/superadmin" element={<SuperAdminRoute><SuperAdmin /></SuperAdminRoute>} />
+        <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
         <Route path="/invite/:token" element={<InviteAccept />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
