@@ -118,7 +118,7 @@ export default function Rides() {
         </div>
 
         {/* Filtres */}
-        <div style={{ display: "flex", gap: "6px", marginBottom: "16px", overflowX: "auto", paddingBottom: "2px" }}>
+        <div style={{ display: "flex", gap: "6px", marginBottom: "16px", overflowX: "auto", paddingBottom: "4px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
           {FILTERS.map((f) => (
             <button
               key={f.key}

@@ -56,12 +56,16 @@ def delete_company(
     ).first()
     if has_superadmin:
         raise HTTPException(status_code=400, detail="Impossible de supprimer une entreprise contenant un superadmin")
-    db.query(Ride).filter(Ride.company_id == company_id).delete()
-    db.query(Driver).filter(Driver.company_id == company_id).delete()
-    db.query(Vehicle).filter(Vehicle.company_id == company_id).delete()
-    db.query(User).filter(User.company_id == company_id).delete()
-    db.delete(company)
-    db.commit()
+    try:
+        db.query(Ride).filter(Ride.company_id == company_id).delete()
+        db.query(Driver).filter(Driver.company_id == company_id).delete()
+        db.query(Vehicle).filter(Vehicle.company_id == company_id).delete()
+        db.query(User).filter(User.company_id == company_id).delete()
+        db.delete(company)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Erreur lors de la suppression de l'entreprise")
 
 
 @router.post("/users/{user_id}/reset-password")

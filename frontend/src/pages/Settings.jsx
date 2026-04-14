@@ -112,7 +112,7 @@ export default function Settings() {
   const { data: remote } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
   const mutation = useMutation({
     mutationFn: updateSettings,
-    onSuccess: () => { qc.invalidateQueries(["settings"]); setSaved(true); setTimeout(() => setSaved(false), 2000); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["settings"] }); setSaved(true); setTimeout(() => setSaved(false), 2000); },
     onError: () => toast("Erreur lors de la sauvegarde", "error"),
   });
 
@@ -126,7 +126,7 @@ export default function Settings() {
   const [pwLoading, setPwLoading] = useState(false);
 
   const handleChangePassword = async () => {
-    if (pwNew.length < 6) { toast("Le mot de passe doit faire au moins 6 caractères", "error"); return; }
+    if (pwNew.length < 8) { toast("Le mot de passe doit faire au moins 8 caractères", "error"); return; }
     if (pwNew !== pwConfirm) { toast("Les mots de passe ne correspondent pas", "error"); return; }
     setPwLoading(true);
     try {
@@ -328,6 +328,12 @@ export default function Settings() {
 
         {/* Notifications */}
         <Section title="Notifications">
+          <div style={{ padding: "10px 16px 6px", borderBottom: "1px solid var(--border)" }}>
+            <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "99px", background: "var(--brand-light)", color: "var(--brand)" }}>
+              Bientôt disponible
+            </span>
+            <p style={{ fontSize: "11.5px", color: "var(--text-3)", margin: "4px 0 0" }}>Les notifications par email seront activées dans une prochaine version.</p>
+          </div>
           <Row label="Nouvelle course assignée" border><Toggle value={notifNewRide} onChange={setNotifNewRide} /></Row>
           <Row label="Facture en attente" sub="Rappel après 48h sans paiement" border><Toggle value={notifUnpaid} onChange={setNotifUnpaid} /></Row>
           <Row label="Alertes véhicule / documents" border><Toggle value={notifAlerts} onChange={setNotifAlerts} /></Row>
@@ -414,9 +420,12 @@ export default function Settings() {
               </svg>
             </Row>
           </button>
-          <Row label="Supprimer le compte" sub="Action irréversible" border={false}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--border-strong)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-          </Row>
+          <button style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+            onClick={() => toast("Pour supprimer votre compte, contactez-nous à support@mypilot.app", "info")}>
+            <Row label="Supprimer le compte" sub="Contactez le support" border={false}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--border-strong)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </Row>
+          </button>
         </Section>
 
         {/* Boutons */}
@@ -447,8 +456,8 @@ export default function Settings() {
 
       {/* Modal mot de passe */}
       {pwModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setPwModal(false)}>
-          <div className="animate-slide-up" style={{ background: "var(--surface)", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: "480px", padding: "24px" }} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setPwModal(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
             <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>Changer le mot de passe</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -481,8 +490,8 @@ export default function Settings() {
 
       {/* Modal invitation */}
       {inviteModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setInviteModal(false)}>
-          <div className="animate-slide-up" style={{ background: "var(--surface)", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: "480px", padding: "24px" }} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setInviteModal(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
             <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>Inviter un membre</p>
             {!inviteLink ? (

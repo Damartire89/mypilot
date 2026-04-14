@@ -14,6 +14,8 @@ class RideCreate(BaseModel):
     payment_type: str = "cash"
     status: str = "pending"
     ride_at: Optional[datetime] = None
+    bon_transport: Optional[str] = None
+    prescripteur: Optional[str] = None
 
 
 class RideUpdate(BaseModel):
@@ -25,6 +27,8 @@ class RideUpdate(BaseModel):
     payment_type: Optional[str] = None
     status: Optional[str] = None
     ride_at: Optional[datetime] = None
+    bon_transport: Optional[str] = None
+    prescripteur: Optional[str] = None
 
 
 class RideOut(BaseModel):
@@ -38,6 +42,8 @@ class RideOut(BaseModel):
     payment_type: str
     status: str
     ride_at: Optional[datetime]
+    bon_transport: Optional[str] = None
+    prescripteur: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

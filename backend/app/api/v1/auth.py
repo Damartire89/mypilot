@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.database import get_db
@@ -6,6 +6,7 @@ from app.models.company import Company
 from app.models.user import User
 from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse
 from app.auth import hash_password, verify_password, create_access_token, get_current_user
+from app.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -16,7 +17,8 @@ class ChangePasswordRequest(BaseModel):
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def register(body: RegisterRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/hour")
+def register(request: Request, body: RegisterRequest, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=400, detail="Email déjà utilisé")
 
@@ -43,12 +45,15 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(body: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("20/minute;100/hour")
+def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
 
     company = db.get(Company, user.company_id)
+    if not company:
+        raise HTTPException(status_code=500, detail="Erreur interne — entreprise introuvable")
     token = create_access_token(user.id, user.company_id)
     return TokenResponse(access_token=token, company_name=company.name)
 
@@ -61,8 +66,8 @@ def change_password(
 ):
     if not verify_password(body.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect")
-    if len(body.new_password) < 6:
-        raise HTTPException(status_code=400, detail="Le nouveau mot de passe doit faire au moins 6 caractères")
+    if len(body.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Le nouveau mot de passe doit faire au moins 8 caractères")
     current_user.hashed_password = hash_password(body.new_password)
     db.commit()
 

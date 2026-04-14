@@ -14,4 +14,7 @@ class Vehicle(Base):
     status = Column(String(20), default="available")  # available | in_use | maintenance
     ct_expiry = Column(Date, nullable=True)
     insurance_expiry = Column(Date, nullable=True)
+    # Documents FR
+    ads_expiry = Column(Date, nullable=True)          # Autorisation de Stationnement (taxi)
+    taximetre_expiry = Column(Date, nullable=True)    # Vignette vérification taximètre
     created_at = Column(DateTime, server_default=func.now())

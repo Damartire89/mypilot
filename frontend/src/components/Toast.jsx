@@ -18,12 +18,18 @@ const ICONS = {
       <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
     </svg>
   ),
+  info: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+  ),
 };
 
 const STYLES = {
   success: { bg: "#f0fdf4", border: "#bbf7d0", color: "#15803d", icon: "#16a34a" },
   error:   { bg: "#fef2f2", border: "#fecaca", color: "#dc2626", icon: "#ef4444" },
   warning: { bg: "#fffbeb", border: "#fde68a", color: "#d97706", icon: "#f59e0b" },
+  info:    { bg: "#eff6ff", border: "#bfdbfe", color: "#1d4ed8", icon: "#2563eb" },
 };
 
 export function ToastProvider({ children }) {

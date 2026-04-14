@@ -5,6 +5,7 @@ import { SkeletonKpiCards, SkeletonRideList } from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import { getStatsSummary, getRides } from "../api/rides";
 import { getVehicles } from "../api/vehicles";
+import { getPrixGasoil } from "../api/gasoil";
 import { useAuth } from "../context/AuthContext";
 
 const KPI_CONFIGS = [
@@ -12,8 +13,10 @@ const KPI_CONFIGS = [
     key: "ca",
     label: "CA ce mois",
     icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 5a8 8 0 1 0 0 14"/>
+        <line x1="2" y1="10" x2="14" y2="10"/>
+        <line x1="2" y1="14" x2="14" y2="14"/>
       </svg>
     ),
     color: "var(--brand)",
@@ -104,52 +107,20 @@ const PAYMENT_LABELS = { cpam: "CPAM", mutuelle: "Mutuelle", cash: "Espèces", c
 
 export default function Dashboard() {
   const { company } = useAuth();
-  const day = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
   const { data: stats, isLoading: statsLoading } = useQuery({ queryKey: ["stats"], queryFn: getStatsSummary, refetchInterval: 30000 });
   const { data: rides = [], isLoading: ridesLoading } = useQuery({ queryKey: ["rides", { limit: 5 }], queryFn: () => getRides({ limit: 5 }) });
   const { data: vehicles = [] } = useQuery({ queryKey: ["vehicles"], queryFn: getVehicles });
+  const { data: gasoil } = useQuery({ queryKey: ["gasoil"], queryFn: getPrixGasoil, staleTime: 3600000, retry: false });
   const isLoading = statsLoading || ridesLoading;
 
   const vehicleAlerts = vehicles.filter(v => v.ct_alert || v.insurance_alert);
   const availableVehicles = vehicles.filter(v => v.status === "available").length;
-  const companyName = company?.name || "myPilot";
   const hasUnpaid = (stats?.unpaid_count || 0) > 0;
 
   return (
     <Layout title="Tableau de bord">
       <div className="max-w-3xl mx-auto p-4 lg:p-6 animate-fade-in">
-
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px" }}>
-          <div>
-            <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: 0 }}>{companyName}</p>
-            <p style={{ fontSize: "13px", color: "var(--text-3)", margin: "2px 0 0", textTransform: "capitalize" }}>{day}</p>
-          </div>
-          <Link
-            to="/rides/new"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              background: "var(--brand)",
-              color: "white",
-              padding: "8px 14px",
-              borderRadius: "8px",
-              fontSize: "13px",
-              fontWeight: 600,
-              textDecoration: "none",
-              flexShrink: 0,
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "var(--brand-hover)"}
-            onMouseLeave={e => e.currentTarget.style.background = "var(--brand)"}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Nouvelle course
-          </Link>
-        </div>
 
         {/* Alertes */}
         {(hasUnpaid || vehicleAlerts.length > 0) && (
@@ -201,6 +172,42 @@ export default function Dashboard() {
                 </span>
               </Link>
             )}
+          </div>
+        )}
+
+        {/* Widget Gasoil */}
+        {gasoil?.prix && Object.keys(gasoil.prix).length > 0 && (
+          <div style={{
+            background: "var(--surface)", border: "1px solid var(--border)",
+            borderRadius: "12px", padding: "12px 16px", marginBottom: "20px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round">
+                  <path d="M3 22V8l9-6 9 6v14"/><path d="M9 22V12h6v10"/><path d="M21 10h2v4h-2"/>
+                </svg>
+                <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Prix carburant — France
+                </span>
+              </div>
+              <span style={{ fontSize: "10px", color: "var(--text-3)" }}>
+                {gasoil.cached ? "↻ mis en cache" : "↻ en direct"}
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              {Object.entries(gasoil.prix).map(([label, prix]) => (
+                <div key={label} style={{
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  background: label === "Gazole" ? "var(--brand-light)" : "var(--surface-2)",
+                  borderRadius: "9px", padding: "7px 12px", minWidth: "60px",
+                }}>
+                  <span style={{ fontSize: "13px", fontWeight: 800, color: label === "Gazole" ? "var(--brand)" : "var(--text)" }}>
+                    {prix.toFixed(3)}€
+                  </span>
+                  <span style={{ fontSize: "10px", color: "var(--text-3)", marginTop: "1px", fontWeight: 500 }}>{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

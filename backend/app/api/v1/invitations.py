@@ -42,8 +42,8 @@ def accept_invitation(token: str, body: InvitationAccept, db: Session = Depends(
     if db.query(User).filter(User.email == invitation.email).first():
         raise HTTPException(status_code=409, detail="Cet email est déjà associé à un compte")
 
-    if len(body.password) < 6:
-        raise HTTPException(status_code=400, detail="Le mot de passe doit faire au moins 6 caractères")
+    if len(body.password) < 8:
+        raise HTTPException(status_code=400, detail="Le mot de passe doit faire au moins 8 caractères")
 
     user = User(
         company_id=invitation.company_id,

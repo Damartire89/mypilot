@@ -59,6 +59,8 @@ export default function EditRide() {
       driver_id: ride.driver_id || "",
       status: ride.status || "pending",
       ride_at: ride.ride_at ? new Date(ride.ride_at).toISOString().slice(0, 16) : "",
+      bon_transport: ride.bon_transport || "",
+      prescripteur: ride.prescripteur || "",
     });
   }, [ride]);
 
@@ -89,6 +91,7 @@ export default function EditRide() {
   });
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
+  const isMedical = form ? ["cpam", "mutuelle"].includes(form.payment_type) : false;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -98,6 +101,8 @@ export default function EditRide() {
       amount: parseFloat(form.amount),
       driver_id: form.driver_id ? parseInt(form.driver_id) : null,
       ride_at: form.ride_at || null,
+      bon_transport: form.bon_transport || null,
+      prescripteur: form.prescripteur || null,
     });
   };
 
@@ -269,6 +274,30 @@ export default function EditRide() {
               </Field>
             </div>
           </div>
+
+          {/* Informations médicales — visible uniquement CPAM / Mutuelle */}
+          {isMedical && (
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "14px" }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+                <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>Informations médicales</p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <Field label="N° bon de transport">
+                  <input style={inputStyle} placeholder="ex. 123456789"
+                    value={form.bon_transport} onChange={e => set("bon_transport", e.target.value)}
+                    onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+                </Field>
+                <Field label="Médecin prescripteur">
+                  <input style={inputStyle} placeholder="Dr. Nom Prénom"
+                    value={form.prescripteur} onChange={e => set("prescripteur", e.target.value)}
+                    onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+                </Field>
+              </div>
+            </div>
+          )}
 
           {/* Chauffeur */}
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px" }}>

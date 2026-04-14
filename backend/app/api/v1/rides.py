@@ -10,7 +10,7 @@ from app.schemas.ride import RideCreate, RideUpdate, RideOut
 from app.auth import get_current_company, require_write_access
 from app.models.user import User
 from typing import List, Optional
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 import csv
 import io
 
@@ -118,7 +118,7 @@ def export_rides_csv(
 
 @router.get("/stats/summary")
 def stats_summary(company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     current_month = db.query(func.sum(Ride.amount)).filter(
         Ride.company_id == company.id,
         Ride.status == "paid",
@@ -151,7 +151,7 @@ def stats_monthly(
     company: Company = Depends(get_current_company),
     db: Session = Depends(get_db),
 ):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     year = year or now.year
     month = month or now.month
 

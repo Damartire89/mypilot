@@ -220,7 +220,8 @@ function Sidebar({ company, user }) {
 
 export default function Layout({ children, title }) {
   const { company, user } = useAuth();
-  const initials = (company?.name || "MP").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const companyName = company?.name || "myPilot";
+  const day = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
@@ -233,43 +234,40 @@ export default function Layout({ children, title }) {
           style={{
             background: "var(--surface)",
             borderBottom: "1px solid var(--border)",
-            padding: "12px 16px",
+            padding: "10px 16px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: "10px",
           }}
         >
           <Logo size={20} />
-          <div style={{
-            width: 30, height: 30,
-            borderRadius: "8px",
-            background: "var(--brand)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "white", fontSize: "11px", fontWeight: 700,
-          }}>
-            {initials}
+          <div style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
+            <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {companyName}
+            </p>
+            <p style={{ fontSize: "10.5px", color: "var(--text-3)", margin: 0, textTransform: "capitalize", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {day}
+            </p>
           </div>
-        </div>
-
-        {/* Header desktop */}
-        {title && (
-          <div
-            className="hidden lg:flex"
+          <Link
+            to="/rides/new"
             style={{
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0 32px",
-              height: "56px",
-              background: "var(--surface)",
-              borderBottom: "1px solid var(--border)",
+              display: "flex", alignItems: "center", gap: "4px",
+              background: "var(--brand)", color: "white",
+              padding: "6px 11px", borderRadius: "7px",
+              fontSize: "12px", fontWeight: 600, textDecoration: "none", flexShrink: 0,
             }}
           >
-            <h1 style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)", margin: 0 }}>{title}</h1>
-          </div>
-        )}
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Nouvelle course
+          </Link>
+        </div>
 
         {/* Contenu */}
-        <main style={{ flex: 1, paddingBottom: "80px" }} className="lg:pb-0">
+        <main style={{ flex: 1 }} className="pb-20 lg:pb-0">
           {children}
         </main>
       </div>

@@ -16,4 +16,7 @@ class Ride(Base):
     payment_type = Column(String(30), default="cash")  # cash | cpam | mutuelle | card
     status = Column(String(20), default="pending")  # pending | paid | cancelled
     ride_at = Column(DateTime, nullable=True)
+    # Champs médicaux FR (CPAM / mutuelle)
+    bon_transport = Column(String(50), nullable=True)    # Numéro de bon de transport
+    prescripteur = Column(String(200), nullable=True)    # Nom du médecin prescripteur
     created_at = Column(DateTime, server_default=func.now())

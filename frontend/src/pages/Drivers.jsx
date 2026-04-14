@@ -14,31 +14,28 @@ const STATUS = {
   off:    { label: "Hors service", bg: "var(--surface-2)",  color: "var(--text-3)" },
 };
 
+function alertLabel(alert) {
+  if (!alert) return null;
+  if (alert === "expired") return { text: "Expiré !", danger: true };
+  const days = parseInt(alert.split("_").pop());
+  if (days === 0) return { text: "Expire aujourd'hui !", danger: true };
+  return { text: `Expire dans ${days}j`, danger: days <= 7 };
+}
+
 function DriverModal({ driver, onClose, onSave }) {
   const [form, setForm] = useState({
     name: driver?.name || "",
     phone: driver?.phone || "",
     license_number: driver?.license_number || "",
     status: driver?.status || "off",
+    carte_pro_expiry: driver?.carte_pro_expiry || "",
+    carte_vtc_expiry: driver?.carte_vtc_expiry || "",
   });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   return (
-    <div
-      style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)",
-        zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center",
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="animate-slide-up"
-        style={{
-          background: "var(--surface)", borderRadius: "16px 16px 0 0",
-          width: "100%", maxWidth: "480px", padding: "24px",
-        }}
-        onClick={e => e.stopPropagation()}
-      >
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e => e.stopPropagation()}>
         <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
         <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>
           {driver ? "Modifier le chauffeur" : "Nouveau chauffeur"}
@@ -91,6 +88,24 @@ function DriverModal({ driver, onClose, onSave }) {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Documents FR */}
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px", marginTop: "4px" }}>
+          <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>Documents FR</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            {[
+              { k: "carte_pro_expiry", label: "Carte pro taxi" },
+              { k: "carte_vtc_expiry", label: "Carte VTC" },
+            ].map(({ k, label }) => (
+              <div key={k}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
+                <input type="date" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                  value={form[k]} onChange={e => set(k, e.target.value)}
+                  onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+              </div>
+            ))}
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
@@ -218,11 +233,13 @@ export default function Drivers() {
             <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
               {drivers.map((driver, i) => {
                 const s = STATUS[driver.status] || STATUS.off;
+                const carteProAlert = alertLabel(driver.carte_pro_alert);
+                const carteVtcAlert = alertLabel(driver.carte_vtc_alert);
                 return (
                   <div
                     key={driver.id}
                     style={{
-                      display: "flex", alignItems: "center", gap: "12px",
+                      display: "flex", alignItems: "flex-start", gap: "12px",
                       padding: "12px 14px", cursor: "pointer",
                       borderBottom: i < drivers.length - 1 ? "1px solid var(--border)" : "none",
                     }}
@@ -234,12 +251,12 @@ export default function Drivers() {
                       width: 36, height: 36, borderRadius: "9px",
                       background: "var(--brand-light)", color: "var(--brand)",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: "12px", fontWeight: 700, flexShrink: 0,
+                      fontSize: "12px", fontWeight: 700, flexShrink: 0, marginTop: 1,
                     }}>
                       {driver.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "7px", flexWrap: "wrap" }}>
                         <p style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--text)", margin: 0 }}>{driver.name}</p>
                         <span style={{ fontSize: "11px", fontWeight: 500, padding: "2px 7px", borderRadius: "99px", background: s.bg, color: s.color }}>
                           {s.label}
@@ -249,6 +266,12 @@ export default function Drivers() {
                         {driver.phone || "Pas de téléphone"}
                         {driver.license_number && ` · ${driver.license_number}`}
                       </p>
+                      {(carteProAlert || carteVtcAlert) && (
+                        <div style={{ display: "flex", gap: "5px", marginTop: "5px", flexWrap: "wrap" }}>
+                          {carteProAlert && <span style={{ fontSize: "11px", fontWeight: 500, padding: "2px 7px", borderRadius: "99px", background: carteProAlert.danger ? "var(--danger-bg)" : "var(--warning-bg)", color: carteProAlert.danger ? "var(--danger)" : "var(--warning)" }}>Carte pro: {carteProAlert.text}</span>}
+                          {carteVtcAlert && <span style={{ fontSize: "11px", fontWeight: 500, padding: "2px 7px", borderRadius: "99px", background: carteVtcAlert.danger ? "var(--danger-bg)" : "var(--warning-bg)", color: carteVtcAlert.danger ? "var(--danger)" : "var(--warning)" }}>Carte VTC: {carteVtcAlert.text}</span>}
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: "flex", gap: "6px" }} onClick={e => e.stopPropagation()}>
                       <button

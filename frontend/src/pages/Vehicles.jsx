@@ -30,19 +30,17 @@ function VehicleModal({ vehicle, onClose, onSave }) {
     status: vehicle?.status || "available",
     ct_expiry: vehicle?.ct_expiry || "",
     insurance_expiry: vehicle?.insurance_expiry || "",
+    ads_expiry: vehicle?.ads_expiry || "",
+    taximetre_expiry: vehicle?.taximetre_expiry || "",
   });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+      className="modal-overlay"
       onClick={onClose}
     >
-      <div
-        className="animate-slide-up"
-        style={{ background: "var(--surface)", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: "480px", padding: "24px", maxHeight: "90vh", overflowY: "auto" }}
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="modal-sheet" onClick={e => e.stopPropagation()}>
         <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
         <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>
           {vehicle ? "Modifier le véhicule" : "Nouveau véhicule"}
@@ -94,7 +92,12 @@ function VehicleModal({ vehicle, onClose, onSave }) {
           <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
             <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>Documents & alertes</p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-              {[{ k: "ct_expiry", label: "Contrôle technique" }, { k: "insurance_expiry", label: "Expiration assurance" }].map(({ k, label }) => (
+              {[
+                { k: "ct_expiry", label: "Contrôle technique" },
+                { k: "insurance_expiry", label: "Assurance" },
+                { k: "ads_expiry", label: "ADS (autorisation)" },
+                { k: "taximetre_expiry", label: "Vignette taximètre" },
+              ].map(({ k, label }) => (
                 <div key={k}>
                   <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
                   <input type="date" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
@@ -147,6 +150,8 @@ export default function Vehicles() {
     const data = { ...form };
     if (!data.ct_expiry) delete data.ct_expiry;
     if (!data.insurance_expiry) delete data.insurance_expiry;
+    if (!data.ads_expiry) delete data.ads_expiry;
+    if (!data.taximetre_expiry) delete data.taximetre_expiry;
     if (!data.year) delete data.year;
     else data.year = parseInt(data.year);
     if (modal === "new") addMutation.mutate(data);
@@ -156,7 +161,7 @@ export default function Vehicles() {
   const available   = vehicles.filter(v => v.status === "available").length;
   const inUse       = vehicles.filter(v => v.status === "in_use").length;
   const maintenance = vehicles.filter(v => v.status === "maintenance").length;
-  const hasAlerts   = vehicles.filter(v => v.ct_alert || v.insurance_alert);
+  const hasAlerts   = vehicles.filter(v => v.ct_alert || v.insurance_alert || v.ads_alert || v.taximetre_alert);
 
   return (
     <Layout title="Flotte">
@@ -193,13 +198,17 @@ export default function Vehicles() {
           <div style={{ background: "var(--danger-bg)", border: "1px solid #fecaca", borderRadius: "10px", padding: "12px 14px", marginBottom: "16px" }}>
             <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--danger)", margin: "0 0 8px" }}>Documents à renouveler</p>
             {hasAlerts.map(v => {
-              const ct = alertLabel(v.ct_alert);
+              const ct  = alertLabel(v.ct_alert);
               const ins = alertLabel(v.insurance_alert);
+              const ads = alertLabel(v.ads_alert);
+              const tax = alertLabel(v.taximetre_alert);
               return (
-                <div key={v.id} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "var(--danger)", marginBottom: "4px" }}>
+                <div key={v.id} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "var(--danger)", marginBottom: "4px", flexWrap: "wrap" }}>
                   <span style={{ fontWeight: 600 }}>{v.plate}</span>
-                  {ct && <span style={{ background: "#fecaca", padding: "1px 7px", borderRadius: "99px", fontSize: "11px" }}>CT: {ct.text}</span>}
+                  {ct  && <span style={{ background: "#fecaca", padding: "1px 7px", borderRadius: "99px", fontSize: "11px" }}>CT: {ct.text}</span>}
                   {ins && <span style={{ background: "#fecaca", padding: "1px 7px", borderRadius: "99px", fontSize: "11px" }}>Assurance: {ins.text}</span>}
+                  {ads && <span style={{ background: "#fecaca", padding: "1px 7px", borderRadius: "99px", fontSize: "11px" }}>ADS: {ads.text}</span>}
+                  {tax && <span style={{ background: "#fecaca", padding: "1px 7px", borderRadius: "99px", fontSize: "11px" }}>Taximètre: {tax.text}</span>}
                 </div>
               );
             })}
@@ -225,8 +234,10 @@ export default function Vehicles() {
             <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
               {vehicles.map((vehicle, i) => {
                 const s = STATUS[vehicle.status] || STATUS.available;
-                const ctAlert = alertLabel(vehicle.ct_alert);
+                const ctAlert  = alertLabel(vehicle.ct_alert);
                 const insAlert = alertLabel(vehicle.insurance_alert);
+                const adsAlert = alertLabel(vehicle.ads_alert);
+                const taxAlert = alertLabel(vehicle.taximetre_alert);
                 return (
                   <div key={vehicle.id} style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "13px 14px", borderBottom: i < vehicles.length - 1 ? "1px solid var(--border)" : "none" }}>
                     <div style={{ width: 36, height: 36, borderRadius: "9px", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
@@ -242,13 +253,15 @@ export default function Vehicles() {
                       <p style={{ fontSize: "12px", color: "var(--text-3)", margin: "3px 0 0" }}>
                         {[vehicle.brand, vehicle.model, vehicle.year].filter(Boolean).join(" · ")}
                       </p>
-                      {(ctAlert || insAlert) && (
+                      {(ctAlert || insAlert || adsAlert || taxAlert) && (
                         <div style={{ display: "flex", gap: "5px", marginTop: "5px", flexWrap: "wrap" }}>
-                          {ctAlert && <span style={{ fontSize: "11px", fontWeight: 500, padding: "2px 7px", borderRadius: "99px", background: ctAlert.danger ? "var(--danger-bg)" : "var(--warning-bg)", color: ctAlert.danger ? "var(--danger)" : "var(--warning)" }}>CT: {ctAlert.text}</span>}
+                          {ctAlert  && <span style={{ fontSize: "11px", fontWeight: 500, padding: "2px 7px", borderRadius: "99px", background: ctAlert.danger  ? "var(--danger-bg)" : "var(--warning-bg)", color: ctAlert.danger  ? "var(--danger)" : "var(--warning)" }}>CT: {ctAlert.text}</span>}
                           {insAlert && <span style={{ fontSize: "11px", fontWeight: 500, padding: "2px 7px", borderRadius: "99px", background: insAlert.danger ? "var(--danger-bg)" : "var(--warning-bg)", color: insAlert.danger ? "var(--danger)" : "var(--warning)" }}>Assurance: {insAlert.text}</span>}
+                          {adsAlert && <span style={{ fontSize: "11px", fontWeight: 500, padding: "2px 7px", borderRadius: "99px", background: adsAlert.danger ? "var(--danger-bg)" : "var(--warning-bg)", color: adsAlert.danger ? "var(--danger)" : "var(--warning)" }}>ADS: {adsAlert.text}</span>}
+                          {taxAlert && <span style={{ fontSize: "11px", fontWeight: 500, padding: "2px 7px", borderRadius: "99px", background: taxAlert.danger ? "var(--danger-bg)" : "var(--warning-bg)", color: taxAlert.danger ? "var(--danger)" : "var(--warning)" }}>Taximètre: {taxAlert.text}</span>}
                         </div>
                       )}
-                      {!ctAlert && !insAlert && vehicle.ct_expiry && (
+                      {!ctAlert && !insAlert && !adsAlert && !taxAlert && vehicle.ct_expiry && (
                         <p style={{ fontSize: "11.5px", color: "var(--text-3)", margin: "3px 0 0" }}>
                           CT: {vehicle.ct_expiry.split("-").reverse().join("/")}
                           {vehicle.insurance_expiry && ` · Assur.: ${vehicle.insurance_expiry.split("-").reverse().join("/")}`}

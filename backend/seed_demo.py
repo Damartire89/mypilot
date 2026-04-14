@@ -7,7 +7,10 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(__file__))
 os.environ.setdefault("DATABASE_URL", "postgresql://mypilot:mypilot@localhost:5432/mypilot")
-os.environ.setdefault("SECRET_KEY", "dev-secret-key-change-in-production")
+# SECRET_KEY doit être définie dans l'environnement (pas de fallback en prod)
+if not os.environ.get("SECRET_KEY"):
+    os.environ["SECRET_KEY"] = "dev-secret-key-local-only-never-use-in-production"
+    print("⚠️  WARNING: SECRET_KEY non définie, utilisation de la clé de dev locale. Ne jamais utiliser en production !")
 
 from app.database import SessionLocal
 from app.models.company import Company

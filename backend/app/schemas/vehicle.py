@@ -10,6 +10,8 @@ class VehicleCreate(BaseModel):
     year: Optional[int] = None
     ct_expiry: Optional[date] = None
     insurance_expiry: Optional[date] = None
+    ads_expiry: Optional[date] = None
+    taximetre_expiry: Optional[date] = None
 
 
 class VehicleUpdate(BaseModel):
@@ -20,6 +22,8 @@ class VehicleUpdate(BaseModel):
     status: Optional[str] = None
     ct_expiry: Optional[date] = None
     insurance_expiry: Optional[date] = None
+    ads_expiry: Optional[date] = None
+    taximetre_expiry: Optional[date] = None
 
 
 class VehicleOut(BaseModel):
@@ -31,8 +35,12 @@ class VehicleOut(BaseModel):
     status: str
     ct_expiry: Optional[date]
     insurance_expiry: Optional[date]
+    ads_expiry: Optional[date] = None
+    taximetre_expiry: Optional[date] = None
     created_at: datetime
     ct_alert: Optional[str] = None
     insurance_alert: Optional[str] = None
+    ads_alert: Optional[str] = None
+    taximetre_alert: Optional[str] = None
 
     model_config = {"from_attributes": True}

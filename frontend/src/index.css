@@ -71,6 +71,9 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
+/* ─── Scroll horizontal sans scrollbar visible ───────────── */
+.scroll-x-hidden::-webkit-scrollbar { display: none; }
+
 /* ─── Focus ring ─────────────────────────────────────────── */
 *:focus-visible {
   outline: 2px solid var(--brand);
@@ -98,3 +101,32 @@ a, button { transition: all 0.15s ease; }
 .animate-fade-in  { animation: fadeIn  0.2s ease both; }
 .animate-slide-up { animation: slideUp 0.25s ease both; }
 .animate-toast-in { animation: toastIn 0.2s ease both; }
+
+/* ─── Modal : bottom-sheet mobile, centré desktop ────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-sheet {
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom));
+  animation: slideUp 0.25s ease both;
+}
+@media (min-width: 1024px) {
+  .modal-overlay { align-items: center; }
+  .modal-sheet {
+    border-radius: 16px;
+    padding: 24px;
+    animation: none;
+    box-shadow: 0 20px 60px -10px rgba(0,0,0,0.2);
+  }
+}

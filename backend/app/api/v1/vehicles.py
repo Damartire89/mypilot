@@ -14,26 +14,25 @@ router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 ALERT_DAYS = 30  # Alerter si expiry dans moins de 30 jours
 
 
+def _alert_for_date(expiry_date, today) -> str | None:
+    if not expiry_date:
+        return None
+    delta = (expiry_date - today).days
+    if delta < 0:
+        return "expired"
+    if delta <= ALERT_DAYS:
+        return f"expires_in_{delta}"
+    return None
+
+
 def _compute_alerts(vehicle: Vehicle) -> dict:
     today = date.today()
-    ct_alert = None
-    insurance_alert = None
-
-    if vehicle.ct_expiry:
-        delta = (vehicle.ct_expiry - today).days
-        if delta < 0:
-            ct_alert = "expired"
-        elif delta <= ALERT_DAYS:
-            ct_alert = f"expires_in_{delta}"
-
-    if vehicle.insurance_expiry:
-        delta = (vehicle.insurance_expiry - today).days
-        if delta < 0:
-            insurance_alert = "expired"
-        elif delta <= ALERT_DAYS:
-            insurance_alert = f"expires_in_{delta}"
-
-    return {"ct_alert": ct_alert, "insurance_alert": insurance_alert}
+    return {
+        "ct_alert": _alert_for_date(vehicle.ct_expiry, today),
+        "insurance_alert": _alert_for_date(vehicle.insurance_expiry, today),
+        "ads_alert": _alert_for_date(vehicle.ads_expiry, today),
+        "taximetre_alert": _alert_for_date(vehicle.taximetre_expiry, today),
+    }
 
 
 def _to_out(vehicle: Vehicle) -> VehicleOut:
@@ -47,9 +46,13 @@ def _to_out(vehicle: Vehicle) -> VehicleOut:
         status=vehicle.status,
         ct_expiry=vehicle.ct_expiry,
         insurance_expiry=vehicle.insurance_expiry,
+        ads_expiry=vehicle.ads_expiry,
+        taximetre_expiry=vehicle.taximetre_expiry,
         created_at=vehicle.created_at,
         ct_alert=alerts["ct_alert"],
         insurance_alert=alerts["insurance_alert"],
+        ads_alert=alerts["ads_alert"],
+        taximetre_alert=alerts["taximetre_alert"],
     )
 
 

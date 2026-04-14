@@ -83,13 +83,12 @@ export default function BottomNav() {
 
   return (
     <div
-      className="lg:hidden"
+      className="flex lg:hidden"
       style={{
         position: "fixed",
         bottom: 0, left: 0, right: 0,
         background: "var(--surface)",
         borderTop: "1px solid var(--border)",
-        display: "flex",
         zIndex: 50,
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
