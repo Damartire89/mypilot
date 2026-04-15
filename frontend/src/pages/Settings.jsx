@@ -117,6 +117,9 @@ export default function Settings() {
   });
 
   const [saved, setSaved] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [cancelStep, setCancelStep] = useState("survey"); // "survey" | "offer" | "confirm"
+  const [cancelReason, setCancelReason] = useState(null);
 
   // Modal changement mot de passe
   const [pwModal, setPwModal] = useState(false);
@@ -405,6 +408,49 @@ export default function Settings() {
           </Section>
         )}
 
+        {/* Abonnement */}
+        <Section title="Mon abonnement">
+          <div style={{ padding: "14px 16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+              {[
+                { name: "Starter", price: "29€", vehicles: "1–3 véhicules", features: ["Courses", "1 chauffeur", "Dashboard"], current: false },
+                { name: "Pro", price: "59€", vehicles: "1–10 véhicules", features: ["Tout Starter", "Chauffeurs ∞", "Export CSV", "Stats avancées", "3 utilisateurs"], current: true, recommended: true },
+                { name: "Flotte", price: "99€", vehicles: "Illimité", features: ["Tout Pro", "Multi-users ∞", "Factures PDF", "Support prioritaire"], current: false },
+              ].map(plan => (
+                <div key={plan.name} style={{
+                  borderRadius: "10px", padding: "12px 10px",
+                  border: plan.recommended ? "1.5px solid var(--brand)" : "1px solid var(--border)",
+                  background: plan.recommended ? "var(--brand-light)" : "var(--surface)",
+                  position: "relative",
+                }}>
+                  {plan.recommended && (
+                    <div style={{ position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)", background: "var(--brand)", color: "white", fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "99px", whiteSpace: "nowrap" }}>
+                      Recommandé
+                    </div>
+                  )}
+                  <p style={{ fontSize: "12px", fontWeight: 700, color: plan.recommended ? "var(--brand)" : "var(--text)", margin: "0 0 2px" }}>{plan.name}</p>
+                  <p style={{ fontSize: "16px", fontWeight: 800, color: "var(--text)", margin: "0 0 2px" }}>{plan.price}<span style={{ fontSize: "10px", fontWeight: 400, color: "var(--text-3)" }}>/mois</span></p>
+                  <p style={{ fontSize: "10px", color: "var(--text-3)", margin: "0 0 8px" }}>{plan.vehicles}</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                    {plan.features.map(f => (
+                      <p key={f} style={{ fontSize: "10.5px", color: "var(--text-2)", margin: 0 }}>✓ {f}</p>
+                    ))}
+                  </div>
+                  {plan.current && (
+                    <div style={{ marginTop: "10px", padding: "4px 0", borderRadius: "6px", background: "var(--brand)", textAlign: "center" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "white" }}>Plan actuel</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: "11px", color: "var(--text-3)", textAlign: "center", margin: "12px 0 0" }}>
+              Pour changer d'offre, contactez{" "}
+              <a href="mailto:support@mypilot.app" style={{ color: "var(--brand)" }}>support@mypilot.app</a>
+            </p>
+          </div>
+        </Section>
+
         {/* Compte */}
         <Section title="Compte">
           <button style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={() => setPwModal(true)}>
@@ -421,36 +467,62 @@ export default function Settings() {
             </Row>
           </button>
           <button style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-            onClick={() => toast("Pour supprimer votre compte, contactez-nous à support@mypilot.app", "info")}>
-            <Row label="Supprimer le compte" sub="Contactez le support" border={false}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--border-strong)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            onClick={() => setDeleteModal(true)}>
+            <Row label="Supprimer le compte" sub="Action irréversible" border={false}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
             </Row>
           </button>
         </Section>
 
-        {/* Boutons */}
+        <button
+          onClick={() => { signOut(); navigate("/"); }}
+          style={{ width: "100%", padding: "11px", borderRadius: "10px", fontSize: "13.5px", fontWeight: 500, border: "1px solid #fecaca", background: "transparent", color: "var(--danger)", cursor: "pointer", marginBottom: "80px" }}
+          onMouseEnter={e => e.currentTarget.style.background = "var(--danger-bg)"}
+          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+        >
+          Se déconnecter
+        </button>
+      </div>
+
+      {/* Bouton Sauvegarder — sticky en bas */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        background: "var(--surface)",
+        borderTop: "1px solid var(--border)",
+        padding: "12px 16px calc(12px + env(safe-area-inset-bottom))",
+        zIndex: 30,
+      }}
+        className="lg:hidden"
+      >
+        <button
+          onClick={handleSave}
+          disabled={mutation.isPending}
+          style={{
+            width: "100%", padding: "12px", borderRadius: "10px", fontSize: "13.5px", fontWeight: 600,
+            border: "none", cursor: "pointer",
+            background: saved ? "var(--success)" : "linear-gradient(135deg, #0891b2, #3b82f6)",
+            boxShadow: saved ? "none" : "0 2px 8px rgba(8,145,178,0.35)",
+            color: "white", opacity: mutation.isPending ? 0.6 : 1,
+          }}
+        >
+          {mutation.isPending ? "Enregistrement..." : saved ? "Modifications enregistrées ✓" : "Sauvegarder les modifications"}
+        </button>
+      </div>
+
+      {/* Bouton Sauvegarder — desktop inline */}
+      <div className="hidden lg:block" style={{ maxWidth: "512px", margin: "0 auto", padding: "0 24px 24px" }}>
         <button
           onClick={handleSave}
           disabled={mutation.isPending}
           style={{
             width: "100%", padding: "12px", borderRadius: "10px", fontSize: "13.5px", fontWeight: 600,
             border: "none", cursor: "pointer", marginBottom: "10px",
-            background: saved ? "var(--success)" : "var(--brand)",
+            background: saved ? "var(--success)" : "linear-gradient(135deg, #0891b2, #3b82f6)",
+            boxShadow: saved ? "none" : "0 2px 8px rgba(8,145,178,0.35)",
             color: "white", opacity: mutation.isPending ? 0.6 : 1,
           }}
-          onMouseEnter={e => { if (!mutation.isPending && !saved) e.currentTarget.style.background = "var(--brand-hover)"; }}
-          onMouseLeave={e => { if (!saved) e.currentTarget.style.background = "var(--brand)"; }}
         >
           {mutation.isPending ? "Enregistrement..." : saved ? "Modifications enregistrées ✓" : "Sauvegarder les modifications"}
-        </button>
-
-        <button
-          onClick={() => { signOut(); navigate("/"); }}
-          style={{ width: "100%", padding: "11px", borderRadius: "10px", fontSize: "13.5px", fontWeight: 500, border: "1px solid #fecaca", background: "transparent", color: "var(--danger)", cursor: "pointer" }}
-          onMouseEnter={e => e.currentTarget.style.background = "var(--danger-bg)"}
-          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-        >
-          Se déconnecter
         </button>
       </div>
 
@@ -484,6 +556,117 @@ export default function Settings() {
                 {pwLoading ? "Modification..." : "Modifier"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel flow — exit survey + offre save */}
+      {deleteModal && (
+        <div className="modal-overlay" onClick={() => { setDeleteModal(false); setCancelStep("survey"); setCancelReason(null); }}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
+
+            {/* Étape 1 — Exit survey */}
+            {cancelStep === "survey" && (() => {
+              const REASONS = [
+                { id: "price",      label: "C'est trop cher pour moi" },
+                { id: "usage",      label: "Je n'utilise pas assez l'app" },
+                { id: "feature",    label: "Il manque une fonctionnalité" },
+                { id: "pause",      label: "Je mets mon activité en pause" },
+                { id: "competitor", label: "Je passe à un autre logiciel" },
+                { id: "testing",    label: "Je testais, je n'en ai pas besoin" },
+              ];
+              return (
+                <>
+                  <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 6px" }}>Avant de partir…</p>
+                  <p style={{ fontSize: "13px", color: "var(--text-3)", margin: "0 0 18px" }}>Quelle est la raison principale ?</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
+                    {REASONS.map(r => (
+                      <button key={r.id} type="button"
+                        onClick={() => { setCancelReason(r.id); setCancelStep(r.id === "testing" ? "confirm" : "offer"); }}
+                        style={{
+                          textAlign: "left", padding: "11px 14px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500,
+                          border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", cursor: "pointer",
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--brand)"; e.currentTarget.style.background = "var(--brand-light)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--surface)"; }}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => { setDeleteModal(false); setCancelStep("survey"); setCancelReason(null); }}
+                    style={{ width: "100%", padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500, border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", cursor: "pointer" }}>
+                    Annuler
+                  </button>
+                </>
+              );
+            })()}
+
+            {/* Étape 2 — Offre save dynamique */}
+            {cancelStep === "offer" && (() => {
+              const OFFERS = {
+                price:      { title: "1 mois offert", sub: "Continuez gratuitement pendant 30 jours — sans engagement.", cta: "Profiter de l'offre", icon: "🎁" },
+                usage:      { title: "On vous aide à démarrer", sub: "Un membre de notre équipe vous appelle pour un tour de l'app (15 min, gratuit).", cta: "Planifier un appel", icon: "📞" },
+                feature:    { title: "Votre avis compte", sub: "Dites-nous ce qui manque — si c'est déjà dans la roadmap, on vous prévient dès que c'est dispo.", cta: "Voir la roadmap", icon: "🗺️" },
+                pause:      { title: "Mettez en pause plutôt", sub: "Suspendez votre compte 1 à 3 mois sans perdre vos données. Reprenez quand vous voulez.", cta: "Mettre en pause", icon: "⏸️" },
+                competitor: { title: "Qu'est-ce qui vous manque ?", sub: "Dites-nous ce que l'autre logiciel fait mieux — si c'est faisable, on le développe.", cta: "Nous écrire", icon: "💬" },
+              };
+              const offer = OFFERS[cancelReason] || OFFERS["price"];
+              return (
+                <>
+                  <div style={{ textAlign: "center", marginBottom: "20px" }}>
+                    <div style={{ fontSize: "36px", marginBottom: "10px" }}>{offer.icon}</div>
+                    <p style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)", margin: "0 0 8px" }}>{offer.title}</p>
+                    <p style={{ fontSize: "13.5px", color: "var(--text-2)", lineHeight: 1.6, margin: 0 }}>{offer.sub}</p>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <button
+                      onClick={() => { setDeleteModal(false); setCancelStep("survey"); setCancelReason(null); toast(offer.cta + " — notre équipe vous contactera", "success"); }}
+                      style={{ width: "100%", padding: "12px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 600, border: "none", background: "var(--brand)", color: "white", cursor: "pointer" }}>
+                      {offer.cta}
+                    </button>
+                    <button onClick={() => setCancelStep("confirm")}
+                      style={{ width: "100%", padding: "11px", borderRadius: "9px", fontSize: "13px", fontWeight: 400, border: "none", background: "transparent", color: "var(--text-3)", cursor: "pointer" }}>
+                      Non merci, je veux quand même supprimer
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+
+            {/* Étape 3 — Confirmation finale */}
+            {cancelStep === "confirm" && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "9px", background: "var(--danger-bg)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                    </svg>
+                  </div>
+                  <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: 0 }}>Supprimer le compte</p>
+                </div>
+                <p style={{ fontSize: "13.5px", color: "var(--text-2)", margin: "0 0 8px", lineHeight: 1.5 }}>
+                  La suppression de votre compte et de toutes vos données est <strong>irréversible</strong>.
+                </p>
+                <p style={{ fontSize: "13px", color: "var(--text-3)", margin: "0 0 20px", lineHeight: 1.5 }}>
+                  Pour confirmer, envoyez un email à{" "}
+                  <a href="mailto:support@mypilot.app" style={{ color: "var(--brand)", fontWeight: 600 }}>support@mypilot.app</a>
+                  {" "}depuis l'adresse associée à votre compte.
+                </p>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button onClick={() => { setDeleteModal(false); setCancelStep("survey"); setCancelReason(null); }}
+                    style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500, border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", cursor: "pointer" }}>
+                    Annuler
+                  </button>
+                  <a href="mailto:support@mypilot.app?subject=Demande suppression compte&body=Bonjour, je souhaite supprimer mon compte myPilot associé à cet email."
+                    style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 600, border: "none", background: "var(--danger)", color: "white", cursor: "pointer", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    Envoyer la demande
+                  </a>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

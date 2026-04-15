@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Layout from "../components/Layout";
 import { SkeletonList } from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
+import ConfirmModal from "../components/ConfirmModal";
 import { getVehicles, createVehicle, updateVehicle, deleteVehicle } from "../api/vehicles";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
@@ -127,6 +128,7 @@ export default function Vehicles() {
   const qc = useQueryClient();
   const toast = useToast();
   const [modal, setModal] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const { data: vehicles = [], isLoading } = useQuery({ queryKey: ["vehicles"], queryFn: getVehicles });
 
@@ -275,7 +277,7 @@ export default function Vehicles() {
                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                       </button>
-                      <button onClick={() => { if (confirm(`Supprimer ${vehicle.plate} ?`)) deleteMutation.mutate(vehicle.id); }}
+                      <button onClick={() => setConfirmDelete(vehicle)}
                         style={{ width: 30, height: 30, borderRadius: "7px", background: "var(--danger-bg)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round">
                           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -293,6 +295,16 @@ export default function Vehicles() {
 
       {modal && (
         <VehicleModal vehicle={modal === "new" ? null : modal} onClose={() => setModal(null)} onSave={handleSave} />
+      )}
+
+      {confirmDelete && (
+        <ConfirmModal
+          title="Supprimer ce véhicule ?"
+          message={`Le véhicule ${confirmDelete.plate} sera définitivement supprimé. Cette action est irréversible.`}
+          confirmLabel="Supprimer"
+          onConfirm={() => { deleteMutation.mutate(confirmDelete.id); setConfirmDelete(null); }}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
     </Layout>
   );

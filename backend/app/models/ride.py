@@ -19,4 +19,8 @@ class Ride(Base):
     # Champs médicaux FR (CPAM / mutuelle)
     bon_transport = Column(String(50), nullable=True)    # Numéro de bon de transport
     prescripteur = Column(String(200), nullable=True)    # Nom du médecin prescripteur
+    # Champs opérationnels
+    notes = Column(String(500), nullable=True)           # Notes libres sur la course
+    km_distance = Column(Numeric(8, 1), nullable=True)   # Distance en km
+    reference = Column(String(30), nullable=True)        # Référence interne (ex. C-2026-0042)
     created_at = Column(DateTime, server_default=func.now())

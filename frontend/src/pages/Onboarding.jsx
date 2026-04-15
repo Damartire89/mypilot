@@ -266,9 +266,10 @@ export default function Onboarding() {
             <button
               type="button"
               onClick={() => setStep(s => s + 1)}
+              className="btn-primary-gradient"
               style={{
                 flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 600,
-                border: "none", background: "var(--brand)", color: "white", cursor: "pointer",
+                color: "white", cursor: "pointer",
               }}
             >
               Continuer →
@@ -278,9 +279,10 @@ export default function Onboarding() {
               type="button"
               onClick={handleFinish}
               disabled={loading}
+              className="btn-primary-gradient"
               style={{
                 flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 600,
-                border: "none", background: "var(--brand)", color: "white",
+                color: "white",
                 cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.65 : 1,
               }}
             >
@@ -289,8 +291,8 @@ export default function Onboarding() {
           )}
         </div>
 
-        {/* Skip tout */}
-        {step === 1 && (
+        {/* Skip tout — visible uniquement à l'étape 3 */}
+        {step === STEPS.length && (
           <p style={{ textAlign: "center", fontSize: "12px", color: "var(--text-3)", marginTop: "16px", marginBottom: 0 }}>
             <button
               onClick={() => { localStorage.removeItem("onboarding_needed"); navigate("/dashboard"); }}

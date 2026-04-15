@@ -5,10 +5,10 @@ import Layout from "../components/Layout";
 
 const ROLE_LABELS = { admin: "Admin", manager: "Manager", readonly: "Lecture", superadmin: "Super Admin" };
 const ROLE_STYLES = {
-  admin:      { bg: "#eff6ff", color: "#1d4ed8" },
+  admin:      { bg: "var(--brand-light)", color: "var(--brand)" },
   manager:    { bg: "#f0fdf4", color: "#15803d" },
   readonly:   { bg: "var(--surface-2)", color: "var(--text-3)" },
-  superadmin: { bg: "#faf5ff", color: "#7c3aed" },
+  superadmin: { bg: "var(--accent-violet-bg)", color: "var(--accent-violet)" },
 };
 
 export default function SuperAdmin() {
@@ -74,7 +74,7 @@ export default function SuperAdmin() {
             background: "var(--warning-bg)", border: "1px solid #fde68a", borderRadius: "10px",
           }}>
             <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--warning)", margin: "0 0 6px" }}>Mot de passe temporaire généré :</p>
-            <code style={{ fontSize: "14px", fontFamily: "monospace", color: "#92400e", display: "block" }}>{resetResult}</code>
+            <code style={{ fontSize: "14px", fontFamily: "monospace", color: "var(--warning-text)", display: "block" }}>{resetResult}</code>
             <button
               onClick={() => setResetResult(null)}
               style={{ marginTop: "8px", background: "none", border: "none", fontSize: "12px", color: "var(--warning)", cursor: "pointer", textDecoration: "underline", padding: 0 }}

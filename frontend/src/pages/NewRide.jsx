@@ -49,7 +49,10 @@ export default function NewRide() {
     ride_at: new Date().toISOString().slice(0, 16),
     bon_transport: "",
     prescripteur: "",
+    notes: "",
+    km_distance: "",
   });
+  const [kmRate, setKmRate] = useState("");
   const isMedical = ["cpam", "mutuelle"].includes(form.payment_type);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -59,6 +62,7 @@ export default function NewRide() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.amount || isNaN(form.amount)) return setError("Montant invalide");
+    if (parseFloat(form.amount) === 0 && !window.confirm("Le montant est 0€. Confirmer l'enregistrement ?")) return;
     setLoading(true);
     setError("");
     try {
@@ -69,6 +73,8 @@ export default function NewRide() {
         ride_at: form.ride_at || null,
         bon_transport: form.bon_transport || null,
         prescripteur: form.prescripteur || null,
+        notes: form.notes || null,
+        km_distance: form.km_distance ? parseFloat(form.km_distance) : null,
       });
       qc.invalidateQueries({ queryKey: ["rides"] });
       qc.invalidateQueries({ queryKey: ["stats"] });
@@ -166,6 +172,36 @@ export default function NewRide() {
                     type="datetime-local"
                     value={form.ride_at}
                     onChange={e => set("ride_at", e.target.value)}
+                    onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                    onBlur={e => e.target.style.borderColor = "var(--border)"}
+                  />
+                </Field>
+              </div>
+
+              {/* Calcul au km */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <Field label="Distance (km)">
+                  <input
+                    style={inputStyle}
+                    type="number" step="0.1" min="0" placeholder="0.0"
+                    value={form.km_distance}
+                    onChange={e => {
+                      set("km_distance", e.target.value);
+                      if (kmRate && e.target.value) set("amount", (parseFloat(e.target.value) * parseFloat(kmRate)).toFixed(2));
+                    }}
+                    onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                    onBlur={e => e.target.style.borderColor = "var(--border)"}
+                  />
+                </Field>
+                <Field label="Tarif / km (€)">
+                  <input
+                    style={inputStyle}
+                    type="number" step="0.01" min="0" placeholder="ex. 1.20"
+                    value={kmRate}
+                    onChange={e => {
+                      setKmRate(e.target.value);
+                      if (form.km_distance && e.target.value) set("amount", (parseFloat(form.km_distance) * parseFloat(e.target.value)).toFixed(2));
+                    }}
                     onFocus={e => e.target.style.borderColor = "var(--brand)"}
                     onBlur={e => e.target.style.borderColor = "var(--border)"}
                   />
@@ -310,6 +346,19 @@ export default function NewRide() {
             )}
           </div>
 
+          {/* Notes */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px" }}>
+            <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px" }}>Notes</p>
+            <textarea
+              style={{ ...inputStyle, minHeight: "72px", resize: "vertical", fontFamily: "inherit", lineHeight: 1.5 }}
+              placeholder="Informations complémentaires, instructions particulières..."
+              value={form.notes}
+              onChange={e => set("notes", e.target.value)}
+              onFocus={e => e.target.style.borderColor = "var(--brand)"}
+              onBlur={e => e.target.style.borderColor = "var(--border)"}
+            />
+          </div>
+
           {error && (
             <div style={{ background: "var(--danger-bg)", border: "1px solid #fecaca", borderRadius: "9px", padding: "10px 14px" }}>
               <p style={{ fontSize: "13px", color: "var(--danger)", margin: 0 }}>{error}</p>
@@ -319,10 +368,11 @@ export default function NewRide() {
           <button
             type="submit"
             disabled={loading}
+            className="btn-primary-gradient"
             style={{
               width: "100%", padding: "13px", borderRadius: "10px",
-              background: "var(--brand)", color: "white",
-              fontSize: "14px", fontWeight: 600, border: "none",
+              color: "white",
+              fontSize: "14px", fontWeight: 600,
               cursor: loading ? "not-allowed" : "pointer",
               opacity: loading ? 0.6 : 1,
             }}

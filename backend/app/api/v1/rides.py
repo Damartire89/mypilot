@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models.ride import Ride
 from app.models.driver import Driver
 from app.models.company import Company
+from app.models.settings import CompanySettings
 from app.schemas.ride import RideCreate, RideUpdate, RideOut
 from app.auth import get_current_company, require_write_access
 from app.models.user import User
@@ -47,7 +48,18 @@ def list_rides(
 
 @router.post("", response_model=RideOut, status_code=201)
 def create_ride(body: RideCreate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
-    ride = Ride(**body.model_dump(), company_id=company.id)
+    data = body.model_dump()
+    # Génération automatique de la référence si non fournie
+    if not data.get("reference"):
+        settings = db.query(CompanySettings).filter_by(company_id=company.id).first()
+        if settings:
+            year = datetime.now(timezone.utc).year
+            prefix = settings.invoice_prefix or "C"
+            num = settings.invoice_next_number or 1
+            data["reference"] = f"{prefix}-{year}-{num:04d}"
+            settings.invoice_next_number = num + 1
+            db.add(settings)
+    ride = Ride(**data, company_id=company.id)
     db.add(ride)
     db.commit()
     db.refresh(ride)
@@ -119,6 +131,8 @@ def export_rides_csv(
 @router.get("/stats/summary")
 def stats_summary(company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
     now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    # Mois courant
     current_month = db.query(func.sum(Ride.amount)).filter(
         Ride.company_id == company.id,
         Ride.status == "paid",
@@ -126,9 +140,25 @@ def stats_summary(company: Company = Depends(get_current_company), db: Session =
         extract("month", Ride.ride_at) == now.month,
     ).scalar() or 0
 
+    # Mois précédent (pour delta %)
+    prev = now.replace(day=1) - timedelta(days=1)
+    prev_month = db.query(func.sum(Ride.amount)).filter(
+        Ride.company_id == company.id,
+        Ride.status == "paid",
+        extract("year", Ride.ride_at) == prev.year,
+        extract("month", Ride.ride_at) == prev.month,
+    ).scalar() or 0
+
+    # Courses aujourd'hui vs hier
     rides_today = db.query(func.count(Ride.id)).filter(
         Ride.company_id == company.id,
         func.date(Ride.ride_at) == now.date(),
+    ).scalar() or 0
+
+    yesterday = (now - timedelta(days=1)).date()
+    rides_yesterday = db.query(func.count(Ride.id)).filter(
+        Ride.company_id == company.id,
+        func.date(Ride.ride_at) == yesterday,
     ).scalar() or 0
 
     unpaid = db.query(func.count(Ride.id), func.sum(Ride.amount)).filter(
@@ -138,7 +168,9 @@ def stats_summary(company: Company = Depends(get_current_company), db: Session =
 
     return {
         "ca_month": float(current_month),
+        "ca_prev_month": float(prev_month),
         "rides_today": rides_today,
+        "rides_yesterday": rides_yesterday,
         "unpaid_count": unpaid[0] or 0,
         "unpaid_amount": float(unpaid[1] or 0),
     }

@@ -11,11 +11,11 @@ const MONTHS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Aoû
 const TYPE_LABELS = { cpam: "CPAM", mutuelle: "Mutuelle", cash: "Espèces", card: "Carte", virement: "Virement", cheque: "Chèque" };
 const TYPE_COLORS = {
   cpam:     "var(--brand)",
-  mutuelle: "#7c3aed",
+  mutuelle: "var(--cat-mutuelle)",
   cash:     "var(--text-3)",
   card:     "var(--text-2)",
-  virement: "#0ea5e9",
-  cheque:   "#a21caf",
+  virement: "var(--cat-virement-chart)",
+  cheque:   "var(--cat-cheque)",
 };
 
 export default function Stats() {

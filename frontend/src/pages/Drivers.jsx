@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { SkeletonList } from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
+import ConfirmModal from "../components/ConfirmModal";
 import { getDrivers, createDriver, updateDriver, deleteDriver } from "../api/drivers";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
@@ -142,6 +143,7 @@ export default function Drivers() {
   const qc = useQueryClient();
   const toast = useToast();
   const [modal, setModal] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const { data: drivers = [], isLoading } = useQuery({ queryKey: ["drivers"], queryFn: getDrivers });
 
@@ -284,7 +286,7 @@ export default function Drivers() {
                         </svg>
                       </button>
                       <button
-                        onClick={() => { if (confirm(`Supprimer ${driver.name} ?`)) deleteMutation.mutate(driver.id); }}
+                        onClick={() => setConfirmDelete(driver)}
                         style={{ width: 30, height: 30, borderRadius: "7px", background: "var(--danger-bg)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round">
@@ -306,6 +308,16 @@ export default function Drivers() {
           driver={modal === "new" ? null : modal}
           onClose={() => setModal(null)}
           onSave={handleSave}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmModal
+          title="Supprimer ce chauffeur ?"
+          message={`${confirmDelete.name} sera définitivement supprimé. Cette action est irréversible.`}
+          confirmLabel="Supprimer"
+          onConfirm={() => { deleteMutation.mutate(confirmDelete.id); setConfirmDelete(null); }}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
     </Layout>

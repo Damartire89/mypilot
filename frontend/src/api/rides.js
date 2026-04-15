@@ -29,6 +29,11 @@ export async function getStatsSummary() {
   return data;
 }
 
+export async function getStatsMonthly(year, month) {
+  const { data } = await client.get("/api/v1/rides/stats/monthly", { params: { year, month } });
+  return data;
+}
+
 export async function exportRidesCSV(params = {}) {
   const token = localStorage.getItem("token");
   const base = import.meta.env.VITE_API_URL || "http://localhost:8002";

@@ -1,5 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { getVehicles } from "../api/vehicles";
+import { getStatsSummary } from "../api/rides";
 
 const items = [
   {
@@ -15,6 +18,7 @@ const items = [
   {
     to: "/rides",
     label: "Courses",
+    badgeKey: "unpaid",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
@@ -24,6 +28,7 @@ const items = [
   {
     to: "/vehicles",
     label: "Flotte",
+    badgeKey: "vehicles",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h5l3 5v3h-8V8z"/>
@@ -69,6 +74,18 @@ export default function BottomNav() {
   const { pathname } = useLocation();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "superadmin";
+
+  const { data: vehicles = [] } = useQuery({ queryKey: ["vehicles"], queryFn: getVehicles, staleTime: 60000 });
+  const { data: stats } = useQuery({ queryKey: ["stats"], queryFn: getStatsSummary, staleTime: 30000 });
+
+  const vehicleAlerts = vehicles.filter(v => v.ct_alert || v.insurance_alert).length;
+  const unpaidCount = stats?.unpaid_count || 0;
+
+  const badges = {
+    vehicles: vehicleAlerts,
+    unpaid: unpaidCount,
+  };
+
   const allItems = isSuperAdmin
     ? [...items, {
         to: "/superadmin",
@@ -93,8 +110,9 @@ export default function BottomNav() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      {allItems.map(({ to, label, icon }) => {
+      {allItems.map(({ to, label, icon, badgeKey }) => {
         const isActive = pathname === to || (to !== "/dashboard" && pathname.startsWith(to));
+        const badgeCount = badgeKey ? badges[badgeKey] : 0;
         return (
           <Link
             key={to}
@@ -116,11 +134,33 @@ export default function BottomNav() {
                 position: "absolute",
                 top: 0, left: "25%", right: "25%",
                 height: "2px",
-                background: "var(--brand)",
+                background: "linear-gradient(90deg, #0891b2, #3b82f6)",
                 borderRadius: "0 0 3px 3px",
               }} />
             )}
-            <span style={{ color: isActive ? "var(--brand)" : "var(--text-3)" }}>{icon}</span>
+            <span style={{ color: isActive ? "var(--brand)" : "var(--text-3)", position: "relative" }}>
+              {icon}
+              {badgeCount > 0 && (
+                <span style={{
+                  position: "absolute",
+                  top: -3, right: -5,
+                  minWidth: 14, height: 14,
+                  background: "var(--danger)",
+                  color: "white",
+                  borderRadius: "99px",
+                  fontSize: "9px",
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 3px",
+                  lineHeight: 1,
+                  border: "1.5px solid var(--surface)",
+                }}>
+                  {badgeCount > 9 ? "9+" : badgeCount}
+                </span>
+              )}
+            </span>
             <span style={{ fontSize: "10px", fontWeight: isActive ? 600 : 500, lineHeight: 1 }}>{label}</span>
           </Link>
         );

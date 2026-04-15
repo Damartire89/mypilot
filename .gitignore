@@ -29,3 +29,8 @@ Thumbs.db
 .worktrees/
 frontend/screenshots/
 frontend/screenshots.mjs
+
+# Design / maquettes (pas nécessaires en prod)
+mockups/
+wireframes/
+docs/

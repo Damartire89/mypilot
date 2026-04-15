@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { login, register } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 import client from "../api/client";
+import Logo from "../components/Logo";
 
 const FEATURES = [
   {
@@ -57,6 +58,10 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (mode === "register" && form.password.length < 8) {
+      setError("Le mot de passe doit faire au moins 8 caractères");
+      return;
+    }
     setLoading(true);
     try {
       let data;
@@ -90,7 +95,7 @@ export default function Login() {
         className="hidden lg:flex"
         style={{
           width: "50%",
-          background: "var(--brand)",
+          background: "linear-gradient(170deg, #1e3a5f 0%, #0c2a45 60%, #0e4f6a 100%)",
           flexDirection: "column",
           justifyContent: "center",
           padding: "60px 56px",
@@ -110,18 +115,9 @@ export default function Login() {
           background: "rgba(255,255,255,0.05)",
         }} />
 
-        {/* Logo blanc */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: 0, marginBottom: "40px" }}>
-          <span style={{ fontSize: 32, fontWeight: 900, color: "rgba(255,255,255,0.9)" }}>my</span>
-          <span style={{ fontSize: 32, fontWeight: 900, color: "white" }}>pil</span>
-          <svg width="26" height="26" viewBox="0 0 32 32" fill="none" style={{ marginBottom: "2px", marginLeft: "1px", marginRight: "1px" }}>
-            <circle cx="16" cy="16" r="13" stroke="white" strokeWidth="3" fill="none"/>
-            <circle cx="16" cy="16" r="3.5" fill="white"/>
-            <line x1="16" y1="12.5" x2="16" y2="3" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-            <line x1="13.5" y1="19" x2="6" y2="27" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-            <line x1="18.5" y1="19" x2="26" y2="27" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-          </svg>
-          <span style={{ fontSize: 32, fontWeight: 900, color: "white" }}>t</span>
+        {/* Logo */}
+        <div style={{ marginBottom: "40px" }}>
+          <Logo size={32} dark />
         </div>
 
         {/* Tagline */}
@@ -237,6 +233,7 @@ export default function Login() {
                   onChange={e => set("company_name", e.target.value)}
                   onFocus={e => e.target.style.borderColor = "var(--brand)"}
                   onBlur={e => e.target.style.borderColor = "var(--border)"}
+                  autoComplete="organization"
                   required
                 />
               </div>
@@ -250,6 +247,7 @@ export default function Login() {
                 value={form.email} onChange={e => set("email", e.target.value)}
                 onFocus={e => e.target.style.borderColor = "var(--brand)"}
                 onBlur={e => e.target.style.borderColor = "var(--border)"}
+                autoComplete="email"
                 required
               />
             </div>
@@ -262,8 +260,13 @@ export default function Login() {
                 value={form.password} onChange={e => set("password", e.target.value)}
                 onFocus={e => e.target.style.borderColor = "var(--brand)"}
                 onBlur={e => e.target.style.borderColor = "var(--border)"}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                minLength={mode === "register" ? 8 : undefined}
                 required
               />
+              {mode === "register" && (
+                <p style={{ fontSize: "11px", color: "var(--text-3)", margin: "4px 0 0" }}>8 caractères minimum</p>
+              )}
             </div>
 
             {error && (
@@ -274,13 +277,12 @@ export default function Login() {
 
             <button
               type="submit" disabled={loading}
+              className="btn-primary-gradient"
               style={{
-                width: "100%", background: "var(--brand)", color: "white", border: "none",
+                width: "100%", color: "white", border: "none",
                 borderRadius: "9px", padding: "11px", fontSize: "14px", fontWeight: 600,
                 cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.65 : 1, marginTop: "2px",
               }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = "var(--brand-hover)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "var(--brand)"; }}
             >
               {loading ? "Connexion..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
             </button>

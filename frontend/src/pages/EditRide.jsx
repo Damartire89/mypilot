@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Layout from "../components/Layout";
 import { SkeletonCard } from "../components/Skeleton";
+import ConfirmModal from "../components/ConfirmModal";
 import { getDrivers } from "../api/drivers";
 import { getRide, updateRide, deleteRide } from "../api/rides";
 import { useToast } from "../components/Toast";
@@ -47,6 +48,8 @@ export default function EditRide() {
 
   const [form, setForm] = useState(null);
   const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [kmRate, setKmRate] = useState("");
 
   useEffect(() => {
     if (!ride) return;
@@ -61,6 +64,8 @@ export default function EditRide() {
       ride_at: ride.ride_at ? new Date(ride.ride_at).toISOString().slice(0, 16) : "",
       bon_transport: ride.bon_transport || "",
       prescripteur: ride.prescripteur || "",
+      notes: ride.notes || "",
+      km_distance: ride.km_distance ? String(ride.km_distance) : "",
     });
   }, [ride]);
 
@@ -103,6 +108,8 @@ export default function EditRide() {
       ride_at: form.ride_at || null,
       bon_transport: form.bon_transport || null,
       prescripteur: form.prescripteur || null,
+      notes: form.notes || null,
+      km_distance: form.km_distance ? parseFloat(form.km_distance) : null,
     });
   };
 
@@ -142,7 +149,7 @@ export default function EditRide() {
             <p style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>Modifier la course</p>
           </div>
           <button
-            onClick={() => { if (confirm("Supprimer cette course ?")) deleteMutation.mutate(); }}
+            onClick={() => setConfirmDelete(true)}
             disabled={deleteMutation.isPending}
             style={{
               width: 30, height: 30, borderRadius: "8px",
@@ -219,6 +226,35 @@ export default function EditRide() {
                     type="datetime-local"
                     value={form.ride_at}
                     onChange={e => set("ride_at", e.target.value)}
+                    onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                    onBlur={e => e.target.style.borderColor = "var(--border)"}
+                  />
+                </Field>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <Field label="Distance (km)">
+                  <input
+                    style={inputStyle}
+                    type="number" step="0.1" min="0" placeholder="0.0"
+                    value={form.km_distance}
+                    onChange={e => {
+                      set("km_distance", e.target.value);
+                      if (kmRate && e.target.value) set("amount", (parseFloat(e.target.value) * parseFloat(kmRate)).toFixed(2));
+                    }}
+                    onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                    onBlur={e => e.target.style.borderColor = "var(--border)"}
+                  />
+                </Field>
+                <Field label="Tarif / km (€)">
+                  <input
+                    style={inputStyle}
+                    type="number" step="0.01" min="0" placeholder="ex. 1.20"
+                    value={kmRate}
+                    onChange={e => {
+                      setKmRate(e.target.value);
+                      if (form.km_distance && e.target.value) set("amount", (parseFloat(form.km_distance) * parseFloat(e.target.value)).toFixed(2));
+                    }}
                     onFocus={e => e.target.style.borderColor = "var(--brand)"}
                     onBlur={e => e.target.style.borderColor = "var(--border)"}
                   />
@@ -346,6 +382,24 @@ export default function EditRide() {
             </div>
           </div>
 
+          {/* Notes */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px" }}>
+            <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px" }}>Notes</p>
+            {ride?.reference && (
+              <p style={{ fontSize: "11px", color: "var(--text-3)", margin: "0 0 10px" }}>
+                Référence : <span style={{ fontWeight: 600, color: "var(--text-2)", fontFamily: "monospace" }}>{ride.reference}</span>
+              </p>
+            )}
+            <textarea
+              style={{ ...inputStyle, minHeight: "72px", resize: "vertical", fontFamily: "inherit", lineHeight: 1.5 }}
+              placeholder="Informations complémentaires, instructions particulières..."
+              value={form.notes}
+              onChange={e => set("notes", e.target.value)}
+              onFocus={e => e.target.style.borderColor = "var(--brand)"}
+              onBlur={e => e.target.style.borderColor = "var(--border)"}
+            />
+          </div>
+
           {error && (
             <div style={{ background: "var(--danger-bg)", border: "1px solid #fecaca", borderRadius: "9px", padding: "10px 14px" }}>
               <p style={{ fontSize: "13px", color: "var(--danger)", margin: 0 }}>{error}</p>
@@ -355,10 +409,11 @@ export default function EditRide() {
           <button
             type="submit"
             disabled={updateMutation.isPending}
+            className="btn-primary-gradient"
             style={{
               width: "100%", padding: "13px", borderRadius: "10px",
-              background: "var(--brand)", color: "white",
-              fontSize: "14px", fontWeight: 600, border: "none",
+              color: "white",
+              fontSize: "14px", fontWeight: 600,
               cursor: updateMutation.isPending ? "not-allowed" : "pointer",
               opacity: updateMutation.isPending ? 0.6 : 1,
             }}
@@ -367,6 +422,16 @@ export default function EditRide() {
           </button>
         </form>
       </div>
+
+      {confirmDelete && (
+        <ConfirmModal
+          title="Supprimer cette course ?"
+          message="Cette course sera définitivement supprimée. Cette action est irréversible."
+          confirmLabel="Supprimer"
+          onConfirm={() => { deleteMutation.mutate(); setConfirmDelete(false); }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
     </Layout>
   );
 }

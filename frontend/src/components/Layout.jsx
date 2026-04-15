@@ -84,15 +84,17 @@ function NavItem({ to, label, icon, exact = false }) {
         borderRadius: "8px",
         fontSize: "13.5px",
         fontWeight: isActive ? "600" : "500",
-        color: isActive ? "var(--brand)" : "var(--text-2)",
-        background: isActive ? "var(--brand-light)" : "transparent",
+        color: isActive ? "#67e8f9" : "rgba(255,255,255,0.45)",
+        background: isActive ? "rgba(6,182,212,0.15)" : "transparent",
         textDecoration: "none",
         marginBottom: "1px",
+        borderLeft: isActive ? "2px solid #06b6d4" : "2px solid transparent",
+        paddingLeft: "8px",
       }}
-      onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--surface-2)"; }}
-      onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+      onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; } }}
+      onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.45)"; } }}
     >
-      <span style={{ color: isActive ? "var(--brand)" : "var(--text-3)", flexShrink: 0 }}>{icon}</span>
+      <span style={{ color: isActive ? "#67e8f9" : "rgba(255,255,255,0.35)", flexShrink: 0 }}>{icon}</span>
       {label}
     </Link>
   );
@@ -110,8 +112,7 @@ function Sidebar({ company, user }) {
       flexDirection: "column",
       width: "var(--sidebar-width)",
       minHeight: "100vh",
-      background: "var(--sidebar-bg)",
-      borderRight: "1px solid var(--border)",
+      background: "linear-gradient(170deg, #1e3a5f 0%, #162d4a 100%)",
       position: "fixed",
       left: 0, top: 0, bottom: 0,
       zIndex: 40,
@@ -119,17 +120,17 @@ function Sidebar({ company, user }) {
     className="hidden lg:flex"
     >
       {/* Logo */}
-      <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid var(--border)" }}>
-        <Logo size={22} />
+      <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <Logo size={22} dark />
       </div>
 
       {/* Entreprise badge */}
-      <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border)" }}>
+      <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{
             width: 32, height: 32,
             borderRadius: "9px",
-            background: "var(--brand)",
+            background: "linear-gradient(135deg, #06b6d4, #3b82f6)",
             display: "flex", alignItems: "center", justifyContent: "center",
             color: "white", fontSize: "12px", fontWeight: 700, flexShrink: 0,
             letterSpacing: "0.02em",
@@ -137,10 +138,10 @@ function Sidebar({ company, user }) {
             {initials}
           </div>
           <div style={{ minWidth: 0 }}>
-            <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <p style={{ fontSize: "13px", fontWeight: 600, color: "#f1f5f9", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {company?.name || "myPilot"}
             </p>
-            <p style={{ fontSize: "11px", color: "var(--text-3)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {user?.email || ""}
             </p>
           </div>
@@ -155,7 +156,7 @@ function Sidebar({ company, user }) {
 
         {isSuperAdmin && (
           <>
-            <div style={{ height: 1, background: "var(--border)", margin: "10px 4px" }} />
+            <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "10px 4px" }} />
             <Link
               to="/superadmin"
               style={{
@@ -166,14 +167,14 @@ function Sidebar({ company, user }) {
                 borderRadius: "8px",
                 fontSize: "13.5px",
                 fontWeight: pathname === "/superadmin" ? "600" : "500",
-                color: pathname === "/superadmin" ? "#7c3aed" : "var(--text-2)",
-                background: pathname === "/superadmin" ? "#f5f3ff" : "transparent",
+                color: pathname === "/superadmin" ? "#67e8f9" : "rgba(255,255,255,0.45)",
+                background: pathname === "/superadmin" ? "rgba(6,182,212,0.15)" : "transparent",
                 textDecoration: "none",
               }}
-              onMouseEnter={e => { if (pathname !== "/superadmin") e.currentTarget.style.background = "var(--surface-2)"; }}
-              onMouseLeave={e => { if (pathname !== "/superadmin") e.currentTarget.style.background = "transparent"; }}
+              onMouseEnter={e => { if (pathname !== "/superadmin") { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; } }}
+              onMouseLeave={e => { if (pathname !== "/superadmin") { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.45)"; } }}
             >
-              <span style={{ color: pathname === "/superadmin" ? "#7c3aed" : "var(--text-3)" }}>
+              <span style={{ color: pathname === "/superadmin" ? "#67e8f9" : "rgba(255,255,255,0.35)" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
@@ -185,7 +186,7 @@ function Sidebar({ company, user }) {
       </nav>
 
       {/* Déconnexion */}
-      <div style={{ padding: "10px", borderTop: "1px solid var(--border)" }}>
+      <div style={{ padding: "10px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
         <button
           onClick={signOut}
           style={{
@@ -196,15 +197,15 @@ function Sidebar({ company, user }) {
             borderRadius: "8px",
             fontSize: "13.5px",
             fontWeight: "500",
-            color: "var(--text-3)",
+            color: "rgba(255,255,255,0.3)",
             background: "transparent",
             border: "none",
             cursor: "pointer",
             width: "100%",
             textAlign: "left",
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = "var(--surface-2)"; e.currentTarget.style.color = "var(--text-2)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-3)"; }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.3)"; }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -254,7 +255,9 @@ export default function Layout({ children, title }) {
             to="/rides/new"
             style={{
               display: "flex", alignItems: "center", gap: "4px",
-              background: "var(--brand)", color: "white",
+              background: "linear-gradient(135deg, #0891b2, #3b82f6)",
+              boxShadow: "0 2px 8px rgba(8,145,178,0.35)",
+              color: "white",
               padding: "6px 11px", borderRadius: "7px",
               fontSize: "12px", fontWeight: 600, textDecoration: "none", flexShrink: 0,
             }}

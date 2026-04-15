@@ -16,6 +16,9 @@ class RideCreate(BaseModel):
     ride_at: Optional[datetime] = None
     bon_transport: Optional[str] = None
     prescripteur: Optional[str] = None
+    notes: Optional[str] = None
+    km_distance: Optional[Decimal] = None
+    reference: Optional[str] = None
 
 
 class RideUpdate(BaseModel):
@@ -29,6 +32,9 @@ class RideUpdate(BaseModel):
     ride_at: Optional[datetime] = None
     bon_transport: Optional[str] = None
     prescripteur: Optional[str] = None
+    notes: Optional[str] = None
+    km_distance: Optional[Decimal] = None
+    reference: Optional[str] = None
 
 
 class RideOut(BaseModel):
@@ -44,6 +50,9 @@ class RideOut(BaseModel):
     ride_at: Optional[datetime]
     bon_transport: Optional[str] = None
     prescripteur: Optional[str] = None
+    notes: Optional[str] = None
+    km_distance: Optional[Decimal] = None
+    reference: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

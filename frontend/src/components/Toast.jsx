@@ -29,7 +29,7 @@ const STYLES = {
   success: { bg: "#f0fdf4", border: "#bbf7d0", color: "#15803d", icon: "#16a34a" },
   error:   { bg: "#fef2f2", border: "#fecaca", color: "#dc2626", icon: "#ef4444" },
   warning: { bg: "#fffbeb", border: "#fde68a", color: "#d97706", icon: "#f59e0b" },
-  info:    { bg: "#eff6ff", border: "#bfdbfe", color: "#1d4ed8", icon: "#2563eb" },
+  info:    { bg: "var(--brand-light)", border: "var(--brand-muted)", color: "var(--brand)", icon: "var(--brand)" },
 };
 
 export function ToastProvider({ children }) {

@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { SkeletonKpiCards, SkeletonRideList } from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
-import { getStatsSummary, getRides } from "../api/rides";
+import { getStatsSummary, getRides, getStatsMonthly } from "../api/rides";
 import { getVehicles } from "../api/vehicles";
+import { getDrivers } from "../api/drivers";
 import { getPrixGasoil } from "../api/gasoil";
 import { useAuth } from "../context/AuthContext";
 
@@ -30,8 +31,8 @@ const KPI_CONFIGS = [
         <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
       </svg>
     ),
-    color: "#7c3aed",
-    bg: "#f5f3ff",
+    color: "var(--accent-violet)",
+    bg: "var(--accent-violet-bg)",
   },
   {
     key: "fleet",
@@ -59,7 +60,41 @@ const KPI_CONFIGS = [
   },
 ];
 
-function KpiCard({ config, value, sub, alert }) {
+function DeltaBadge({ current, prev }) {
+  if (!prev || prev === 0) return null;
+  const pct = ((current - prev) / prev) * 100;
+  const up = pct >= 0;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: "2px",
+      fontSize: "10px", fontWeight: 700,
+      padding: "1px 5px", borderRadius: "99px",
+      background: up ? "var(--success-bg)" : "var(--danger-bg)",
+      color: up ? "var(--success)" : "var(--danger)",
+    }}>
+      {up ? "▲" : "▼"} {Math.abs(pct).toFixed(0)}%
+    </span>
+  );
+}
+
+function Sparkline({ data, color }) {
+  if (!data || data.length < 2) return null;
+  const values = data.map(d => d.ca || 0);
+  const max = Math.max(...values, 1);
+  const w = 60, h = 24;
+  const pts = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * w;
+    const y = h - (v / max) * h;
+    return `${x},${y}`;
+  }).join(" ");
+  return (
+    <svg width={w} height={h} style={{ display: "block", marginTop: "4px" }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+    </svg>
+  );
+}
+
+function KpiCard({ config, value, sub, alert, delta, deltaRef, sparkData }) {
   const alertStyle = alert
     ? { color: "var(--danger)", bg: "var(--danger-bg)" }
     : { color: config.color, bg: config.bg };
@@ -74,15 +109,18 @@ function KpiCard({ config, value, sub, alert }) {
       flexDirection: "column",
       gap: "10px",
     }}>
-      <div style={{
-        width: 34, height: 34,
-        borderRadius: "9px",
-        background: alertStyle.bg,
-        color: alertStyle.color,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0,
-      }}>
-        {config.icon}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{
+          width: 34, height: 34,
+          borderRadius: "9px",
+          background: alertStyle.bg,
+          color: alertStyle.color,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0,
+        }}>
+          {config.icon}
+        </div>
+        {delta !== undefined && <DeltaBadge current={delta} prev={deltaRef} />}
       </div>
       <div>
         <p style={{ fontSize: "22px", fontWeight: 800, color: alert ? "var(--danger)" : "var(--text)", margin: 0, lineHeight: 1.1 }}>
@@ -90,37 +128,91 @@ function KpiCard({ config, value, sub, alert }) {
         </p>
         <p style={{ fontSize: "12px", color: "var(--text-3)", margin: "4px 0 0", fontWeight: 500 }}>{config.label}</p>
         {sub && <p style={{ fontSize: "11px", color: alert ? "var(--danger)" : "var(--text-3)", margin: "2px 0 0" }}>{sub}</p>}
+        {sparkData && <Sparkline data={sparkData} color={config.color} />}
       </div>
     </div>
   );
 }
 
 const PAYMENT_COLORS = {
-  cpam: { bg: "#eff6ff", color: "#1d4ed8" },
-  mutuelle: { bg: "#f5f3ff", color: "#7c3aed" },
-  cash: { bg: "var(--surface-2)", color: "var(--text-2)" },
-  card: { bg: "var(--surface-2)", color: "var(--text-2)" },
-  virement: { bg: "#eff6ff", color: "#1d4ed8" },
-  cheque: { bg: "#fdf4ff", color: "#a21caf" },
+  cpam:     { bg: "var(--brand-light)",    color: "var(--brand)" },
+  mutuelle: { bg: "var(--cat-mutuelle-bg)", color: "var(--cat-mutuelle)" },
+  cash:     { bg: "var(--surface-2)",       color: "var(--text-2)" },
+  card:     { bg: "var(--surface-2)",       color: "var(--text-2)" },
+  virement: { bg: "var(--brand-light)",    color: "var(--brand)" },
+  cheque:   { bg: "var(--cat-cheque-bg)",  color: "var(--cat-cheque)" },
 };
 const PAYMENT_LABELS = { cpam: "CPAM", mutuelle: "Mutuelle", cash: "Espèces", card: "Carte", virement: "Virement", cheque: "Chèque" };
 
 export default function Dashboard() {
   const { company } = useAuth();
+  const navigate = useNavigate();
 
+  const now = new Date();
   const { data: stats, isLoading: statsLoading } = useQuery({ queryKey: ["stats"], queryFn: getStatsSummary, refetchInterval: 30000 });
   const { data: rides = [], isLoading: ridesLoading } = useQuery({ queryKey: ["rides", { limit: 5 }], queryFn: () => getRides({ limit: 5 }) });
   const { data: vehicles = [] } = useQuery({ queryKey: ["vehicles"], queryFn: getVehicles });
+  const { data: drivers = [] } = useQuery({ queryKey: ["drivers"], queryFn: getDrivers, staleTime: 60000 });
   const { data: gasoil } = useQuery({ queryKey: ["gasoil"], queryFn: getPrixGasoil, staleTime: 3600000, retry: false });
+  const { data: monthly } = useQuery({ queryKey: ["stats-monthly", now.getFullYear(), now.getMonth() + 1], queryFn: () => getStatsMonthly(now.getFullYear(), now.getMonth() + 1), staleTime: 60000, retry: false });
   const isLoading = statsLoading || ridesLoading;
 
   const vehicleAlerts = vehicles.filter(v => v.ct_alert || v.insurance_alert);
   const availableVehicles = vehicles.filter(v => v.status === "available").length;
   const hasUnpaid = (stats?.unpaid_count || 0) > 0;
 
+  const hasVehicle = vehicles.length > 0;
+  const hasDriver = drivers.length > 0;
+  const hasRide = rides.length > 0;
+  const activationDone = hasVehicle && hasDriver && hasRide;
+
   return (
     <Layout title="Tableau de bord">
       <div className="max-w-3xl mx-auto p-4 lg:p-6 animate-fade-in">
+
+        {/* Checklist d'activation — disparaît quand tout est fait */}
+        {!activationDone && !isLoading && (
+          <div style={{
+            background: "var(--surface)", border: "1px solid var(--border)",
+            borderRadius: "12px", padding: "14px 16px", marginBottom: "20px",
+          }}>
+            <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--text)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Mise en route
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {[
+                { done: true, label: "Compte créé", link: null },
+                { done: hasVehicle, label: "Ajoutez votre premier véhicule", link: "/vehicles" },
+                { done: hasDriver, label: "Invitez un chauffeur", link: "/drivers" },
+                { done: hasRide, label: "Enregistrez votre première course", link: "/rides/new" },
+              ].map((item, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div style={{
+                    width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                    background: item.done ? "var(--success)" : "var(--surface-2)",
+                    border: item.done ? "none" : "1px solid var(--border)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    {item.done && (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                        <path d="M20 6L9 17l-5-5"/>
+                      </svg>
+                    )}
+                  </div>
+                  {item.done || !item.link ? (
+                    <span style={{ fontSize: "13px", color: item.done ? "var(--text-3)" : "var(--text)", fontWeight: item.done ? 400 : 500, textDecoration: item.done ? "line-through" : "none" }}>
+                      {item.label}
+                    </span>
+                  ) : (
+                    <Link to={item.link} style={{ fontSize: "13px", color: "var(--brand)", fontWeight: 500, textDecoration: "none" }}>
+                      {item.label} →
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Alertes */}
         {(hasUnpaid || vehicleAlerts.length > 0) && (
@@ -134,7 +226,7 @@ export default function Dashboard() {
                 borderRadius: "10px",
                 background: "var(--warning-bg)",
                 border: "1px solid #fde68a",
-                color: "#92400e",
+                color: "var(--warning-text)",
                 textDecoration: "none",
                 fontSize: "13px",
                 fontWeight: 500,
@@ -158,7 +250,7 @@ export default function Dashboard() {
                 borderRadius: "10px",
                 background: "var(--danger-bg)",
                 border: "1px solid #fecaca",
-                color: "#7f1d1d",
+                color: "var(--danger-text)",
                 textDecoration: "none",
                 fontSize: "13px",
                 fontWeight: 500,
@@ -190,9 +282,7 @@ export default function Dashboard() {
                   Prix carburant — France
                 </span>
               </div>
-              <span style={{ fontSize: "10px", color: "var(--text-3)" }}>
-                {gasoil.cached ? "↻ mis en cache" : "↻ en direct"}
-              </span>
+              <span style={{ fontSize: "10px", color: "var(--text-3)" }}>Mis à jour aujourd'hui</span>
             </div>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {Object.entries(gasoil.prix).map(([label, prix]) => (
@@ -219,10 +309,15 @@ export default function Dashboard() {
             <KpiCard
               config={KPI_CONFIGS[0]}
               value={`${(stats?.ca_month || 0).toLocaleString("fr-FR")}€`}
+              delta={stats?.ca_month}
+              deltaRef={stats?.ca_prev_month}
+              sparkData={monthly?.weekly}
             />
             <KpiCard
               config={KPI_CONFIGS[1]}
               value={stats?.rides_today ?? "—"}
+              delta={stats?.rides_today}
+              deltaRef={stats?.rides_yesterday}
             />
             <KpiCard
               config={KPI_CONFIGS[2]}
@@ -267,13 +362,20 @@ export default function Dashboard() {
             {rides.map((ride, i) => {
               const pc = PAYMENT_COLORS[ride.payment_type] || { bg: "var(--surface-2)", color: "var(--text-2)" };
               return (
-                <div key={ride.id} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "12px 16px",
-                  borderBottom: i < rides.length - 1 ? "1px solid var(--border)" : "none",
-                }}>
+                <div
+                  key={ride.id}
+                  onClick={() => navigate(`/rides/${ride.id}/edit`)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "12px 16px",
+                    borderBottom: i < rides.length - 1 ? "1px solid var(--border)" : "none",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                >
                   <span style={{
                     width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
                     background: ride.status === "paid" ? "var(--success)" : "var(--warning)",

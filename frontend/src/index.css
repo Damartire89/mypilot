@@ -2,21 +2,29 @@
 
 /* ─── Design tokens ─────────────────────────────────────── */
 :root {
-  /* Brand */
-  --brand: #2563eb;
-  --brand-hover: #1d4ed8;
-  --brand-light: #eff6ff;
-  --brand-muted: #dbeafe;
+  /* Brand — Flotte moderne (bleu marine + cyan) */
+  --brand: #0891b2;
+  --brand-hover: #0e7490;
+  --brand-light: #ecfeff;
+  --brand-muted: #cffafe;
+
+  /* Accent secondaire */
+  --accent: #3b82f6;
+
+  /* Sidebar */
+  --sidebar-bg-from: #1e3a5f;
+  --sidebar-bg-to: #162d4a;
+  --sidebar-width: 240px;
 
   /* Neutrals */
-  --bg: #f8fafc;
+  --bg: #f0f4f8;
   --surface: #ffffff;
-  --surface-2: #f1f5f9;
+  --surface-2: #f8fafc;
   --border: #e2e8f0;
   --border-strong: #cbd5e1;
 
   /* Text */
-  --text: #0f172a;
+  --text: #1e293b;
   --text-2: #475569;
   --text-3: #94a3b8;
 
@@ -25,12 +33,21 @@
   --success-bg: #ecfdf5;
   --warning: #f59e0b;
   --warning-bg: #fffbeb;
+  --warning-text: #92400e;
   --danger: #ef4444;
   --danger-bg: #fef2f2;
+  --danger-text: #7f1d1d;
 
-  /* Sidebar */
-  --sidebar-bg: #ffffff;
-  --sidebar-width: 240px;
+  /* Accent secondaire violet (courses, rôles admin) */
+  --accent-violet: #7c3aed;
+  --accent-violet-bg: #f5f3ff;
+
+  /* Catégories paiement */
+  --cat-mutuelle: #7c3aed;
+  --cat-mutuelle-bg: #f5f3ff;
+  --cat-cheque: #a21caf;
+  --cat-cheque-bg: #fdf4ff;
+  --cat-virement-chart: #0ea5e9;
 
   /* Radius */
   --radius-sm: 6px;
@@ -43,6 +60,32 @@
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
   --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
   --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07);
+}
+
+/* ─── Dark mode ─────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-2: #263348;
+    --border: #2d3f55;
+    --border-strong: #3d5068;
+
+    --text: #f1f5f9;
+    --text-2: #94a3b8;
+    --text-3: #5e7694;
+
+    --brand-light: #0c2d3a;
+    --brand-muted: #0e3d4e;
+
+    --success-bg: #052e16;
+    --warning-bg: #1c1500;
+    --danger-bg: #1f0a0a;
+
+    --accent-violet-bg: #1e1332;
+    --cat-mutuelle-bg: #1e1332;
+    --cat-cheque-bg: #1f0a24;
+  }
 }
 
 /* ─── Base ───────────────────────────────────────────────── */
@@ -80,6 +123,17 @@ body {
   outline-offset: 2px;
 }
 input:focus, textarea:focus, select:focus { outline: none; }
+
+/* ─── Bouton primaire gradient ───────────────────────────── */
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #0891b2, #3b82f6) !important;
+  box-shadow: 0 2px 8px rgba(8,145,178,0.35) !important;
+  border: none !important;
+}
+.btn-primary-gradient:hover {
+  background: linear-gradient(135deg, #0e7490, #2563eb) !important;
+  box-shadow: 0 4px 12px rgba(8,145,178,0.45) !important;
+}
 
 /* ─── Transitions globales ───────────────────────────────── */
 a, button { transition: all 0.15s ease; }

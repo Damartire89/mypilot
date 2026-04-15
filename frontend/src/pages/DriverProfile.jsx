@@ -13,8 +13,8 @@ const STATUS_STYLES = {
   off:    { label: "Hors service", bg: "var(--surface-2)",  color: "var(--text-3)" },
 };
 const PAYMENT_COLORS = {
-  cpam: "var(--brand)", mutuelle: "#7c3aed", cash: "var(--text-3)",
-  card: "var(--text-2)", virement: "#0ea5e9", cheque: "#a21caf",
+  cpam: "var(--brand)", mutuelle: "var(--cat-mutuelle)", cash: "var(--text-3)",
+  card: "var(--text-2)", virement: "var(--cat-virement-chart)", cheque: "var(--cat-cheque)",
 };
 
 export default function DriverProfile() {
@@ -202,6 +202,50 @@ export default function DriverProfile() {
                 })}
               </div>
             )}
+
+            {/* Planning — jours travaillés ce mois */}
+            {stats.rides.length > 0 && (() => {
+              const daysInMonth = new Date(year, month, 0).getDate();
+              const firstDow = new Date(year, month - 1, 1).getDay(); // 0=dim
+              const startOffset = (firstDow === 0 ? 6 : firstDow - 1); // lundi=0
+              const workedDays = new Set(stats.rides.map(r => r.ride_at ? new Date(r.ride_at).getDate() : null).filter(Boolean));
+              const today = now.getDate();
+              const isThisMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+              return (
+                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
+                  <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px" }}>
+                    Jours travaillés — {workedDays.size}j
+                  </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px", textAlign: "center" }}>
+                    {["L","M","M","J","V","S","D"].map((d, i) => (
+                      <div key={i} style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-3)", paddingBottom: "4px" }}>{d}</div>
+                    ))}
+                    {Array.from({ length: startOffset }).map((_, i) => <div key={`e${i}`} />)}
+                    {Array.from({ length: daysInMonth }).map((_, i) => {
+                      const day = i + 1;
+                      const worked = workedDays.has(day);
+                      const isToday = isThisMonth && day === today;
+                      return (
+                        <div key={day} style={{
+                          width: "100%", paddingBottom: "100%", position: "relative", borderRadius: "6px",
+                          background: worked ? "var(--brand)" : isToday ? "var(--surface-2)" : "transparent",
+                          border: isToday && !worked ? "1px solid var(--brand)" : "none",
+                        }}>
+                          <span style={{
+                            position: "absolute", inset: 0,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: "10px", fontWeight: worked ? 700 : 400,
+                            color: worked ? "white" : isToday ? "var(--brand)" : "var(--text-3)",
+                          }}>
+                            {day}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Liste des courses */}
             {stats.rides.length > 0 && (

@@ -5,17 +5,18 @@ import Layout from "../components/Layout";
 import { SkeletonRideList } from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import { getRides, updateRide, exportRidesCSV } from "../api/rides";
+import { getDrivers } from "../api/drivers";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
 
 const PAYMENT_LABELS = { cpam: "CPAM", mutuelle: "Mutuelle", cash: "Espèces", card: "Carte", virement: "Virement", cheque: "Chèque" };
 const PAYMENT_STYLES = {
-  cpam:      { bg: "#eff6ff", color: "#1d4ed8" },
-  mutuelle:  { bg: "#f5f3ff", color: "#7c3aed" },
-  cash:      { bg: "var(--surface-2)", color: "var(--text-2)" },
-  card:      { bg: "var(--surface-2)", color: "var(--text-2)" },
-  virement:  { bg: "#eff6ff", color: "#1d4ed8" },
-  cheque:    { bg: "#fdf4ff", color: "#a21caf" },
+  cpam:      { bg: "var(--brand-light)",    color: "var(--brand)" },
+  mutuelle:  { bg: "var(--cat-mutuelle-bg)", color: "var(--cat-mutuelle)" },
+  cash:      { bg: "var(--surface-2)",       color: "var(--text-2)" },
+  card:      { bg: "var(--surface-2)",       color: "var(--text-2)" },
+  virement:  { bg: "var(--brand-light)",    color: "var(--brand)" },
+  cheque:    { bg: "var(--cat-cheque-bg)",  color: "var(--cat-cheque)" },
 };
 
 const FILTERS = [
@@ -32,21 +33,37 @@ export default function Rides() {
   const qc = useQueryClient();
   const toast = useToast();
   const [activeFilter, setActiveFilter] = useState("all");
+  const [selectedDriver, setSelectedDriver] = useState("");
+  const [search, setSearch] = useState("");
   const [exporting, setExporting] = useState(false);
   const [limit, setLimit] = useState(30);
+
+  const { data: drivers = [] } = useQuery({ queryKey: ["drivers"], queryFn: getDrivers, staleTime: 60000 });
 
   const queryParams = {};
   if (activeFilter === "pending") queryParams.status = "pending";
   if (activeFilter === "cpam")    queryParams.payment_type = "cpam";
   if (activeFilter === "cash")    queryParams.payment_type = "cash";
   if (activeFilter === "today")   queryParams.date_from = new Date().toISOString().slice(0, 10);
+  if (selectedDriver)             queryParams.driver_id = selectedDriver;
 
   const { data: rides = [], isLoading } = useQuery({
     queryKey: ["rides", queryParams, limit],
     queryFn: () => getRides({ ...queryParams, limit }),
   });
 
-  const handleFilterChange = (key) => { setActiveFilter(key); setLimit(30); };
+  const handleFilterChange = (key) => { setActiveFilter(key); setLimit(30); setSearch(""); };
+
+  const filteredRides = search.trim()
+    ? rides.filter(r => {
+        const q = search.toLowerCase();
+        return (
+          (r.client_name || "").toLowerCase().includes(q) ||
+          (r.origin || "").toLowerCase().includes(q) ||
+          (r.destination || "").toLowerCase().includes(q)
+        );
+      })
+    : rides;
 
   const markPaid = useMutation({
     mutationFn: (id) => updateRide(id, { status: "paid" }),
@@ -57,8 +74,6 @@ export default function Rides() {
     },
     onError: () => toast("Erreur lors de la mise à jour", "error"),
   });
-
-  const grouped = groupByDate(rides);
 
   return (
     <Layout title="Courses">
@@ -73,7 +88,7 @@ export default function Rides() {
               padding: "2px 8px", borderRadius: "99px",
               background: "var(--surface-2)", color: "var(--text-3)",
             }}>
-              {rides.length}
+              {search ? filteredRides.length : rides.length}
             </span>
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -118,7 +133,7 @@ export default function Rides() {
         </div>
 
         {/* Filtres */}
-        <div style={{ display: "flex", gap: "6px", marginBottom: "16px", overflowX: "auto", paddingBottom: "4px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        <div style={{ display: "flex", gap: "6px", marginBottom: drivers.length > 0 ? "8px" : "16px", overflowX: "auto", paddingBottom: "4px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
           {FILTERS.map((f) => (
             <button
               key={f.key}
@@ -140,19 +155,77 @@ export default function Rides() {
           ))}
         </div>
 
+        {/* Recherche */}
+        <div style={{ position: "relative", marginBottom: "10px" }}>
+          <svg style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+            width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="search"
+            placeholder="Rechercher un client, trajet..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: "100%", boxSizing: "border-box",
+              padding: "7px 12px 7px 30px",
+              border: search ? "1px solid var(--brand)" : "1px solid var(--border)",
+              borderRadius: "8px",
+              fontSize: "13px",
+              background: "var(--surface)",
+              color: "var(--text)",
+              outline: "none",
+            }}
+            onFocus={e => e.target.style.borderColor = "var(--brand)"}
+            onBlur={e => { if (!search) e.target.style.borderColor = "var(--border)"; }}
+          />
+          {search && (
+            <button onClick={() => setSearch("")} style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", padding: "2px", lineHeight: 1 }}>
+              ×
+            </button>
+          )}
+        </div>
+
+        {/* Filtre chauffeur */}
+        {drivers.length > 0 && (
+          <div style={{ marginBottom: "16px" }}>
+            <select
+              value={selectedDriver}
+              onChange={e => { setSelectedDriver(e.target.value); setLimit(30); }}
+              style={{
+                padding: "6px 10px",
+                borderRadius: "8px",
+                border: selectedDriver ? "1px solid var(--brand)" : "1px solid var(--border)",
+                background: selectedDriver ? "var(--brand-light)" : "var(--surface)",
+                color: selectedDriver ? "var(--brand)" : "var(--text-2)",
+                fontSize: "12.5px",
+                fontWeight: selectedDriver ? 600 : 500,
+                cursor: "pointer",
+                outline: "none",
+                minWidth: "160px",
+              }}
+            >
+              <option value="">Tous les chauffeurs</option>
+              {drivers.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {isLoading && <SkeletonRideList rows={6} />}
 
-        {!isLoading && rides.length === 0 && (
+        {!isLoading && filteredRides.length === 0 && (
           <EmptyState
             icon="rides"
-            title={activeFilter === "all" ? "Aucune course enregistrée" : "Aucune course pour ce filtre"}
-            subtitle={activeFilter === "all" ? "Chaque course enregistrée alimente vos statistiques et votre CA en temps réel." : "Essayez un autre filtre ou ajoutez une nouvelle course."}
-            linkTo={activeFilter === "all" ? "/rides/new" : undefined}
-            linkLabel={activeFilter === "all" ? "+ Enregistrer une course" : undefined}
+            title={search ? `Aucun résultat pour "${search}"` : activeFilter === "all" ? "Aucune course enregistrée" : "Aucune course pour ce filtre"}
+            subtitle={search ? "Essayez un autre terme de recherche." : activeFilter === "all" ? "Chaque course enregistrée alimente vos statistiques et votre CA en temps réel." : "Essayez un autre filtre ou ajoutez une nouvelle course."}
+            linkTo={!search && activeFilter === "all" ? "/rides/new" : undefined}
+            linkLabel={!search && activeFilter === "all" ? "+ Enregistrer une course" : undefined}
           />
         )}
 
-        {!isLoading && grouped.map(({ label, rides: group }) => (
+        {!isLoading && groupByDate(filteredRides).map(({ label, rides: group }) => (
           <div key={label} style={{ marginBottom: "16px" }}>
             <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>
               {label}
@@ -194,6 +267,11 @@ export default function Rides() {
                       {(ride.origin || ride.destination) && (
                         <p style={{ fontSize: "12px", color: "var(--text-3)", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {ride.origin}{ride.destination ? ` → ${ride.destination}` : ""}
+                        </p>
+                      )}
+                      {ride.notes && (
+                        <p style={{ fontSize: "11px", color: "var(--text-3)", margin: "1px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontStyle: "italic" }}>
+                          {ride.notes}
                         </p>
                       )}
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "5px", flexWrap: "wrap" }}>
