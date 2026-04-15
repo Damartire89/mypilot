@@ -53,6 +53,7 @@ export default function Login() {
   const [form, setForm] = useState({ company_name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [slowWarning, setSlowWarning] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e) => {
@@ -63,6 +64,8 @@ export default function Login() {
       return;
     }
     setLoading(true);
+    setSlowWarning(false);
+    const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
     try {
       let data;
       if (mode === "login") {
@@ -83,6 +86,8 @@ export default function Login() {
     } catch (err) {
       setError(err.response?.data?.detail || "Identifiants incorrects");
     } finally {
+      clearTimeout(slowTimer);
+      setSlowWarning(false);
       setLoading(false);
     }
   };
@@ -284,7 +289,7 @@ export default function Login() {
                 cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.65 : 1, marginTop: "2px",
               }}
             >
-              {loading ? "Connexion..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
+              {loading ? (slowWarning ? "Démarrage du serveur..." : "Connexion...") : mode === "login" ? "Se connecter" : "Créer mon compte"}
             </button>
           </form>
 

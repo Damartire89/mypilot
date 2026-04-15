@@ -10,6 +10,10 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30000 } },
 });
 
+// Wake up backend on app load (Render free tier sleeps after 15min)
+const API_URL = import.meta.env.VITE_API_URL || "https://mypilot-api.onrender.com";
+fetch(`${API_URL}/health`).catch(() => {});
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
