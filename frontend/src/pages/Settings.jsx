@@ -176,6 +176,18 @@ export default function Settings() {
   const [notifAlerts, setNotifAlerts] = useState(true);
   const [notifDailyReport, setNotifDailyReport] = useState(false);
 
+  // Tarification
+  const [defaultKmRate, setDefaultKmRate] = useState("");
+  const [nightRateMultiplier, setNightRateMultiplier] = useState("");
+  const [weekendRateMultiplier, setWeekendRateMultiplier] = useState("");
+  const [maxRideAmountAlert, setMaxRideAmountAlert] = useState("");
+
+  // Entreprise étendu
+  const [billingEmail, setBillingEmail] = useState("");
+  const [zoneActivite, setZoneActivite] = useState("");
+  const [numeroLicence, setNumeroLicence] = useState("");
+  const [iban, setIban] = useState("");
+
   // Charger les données distantes dans les states locaux
   useEffect(() => {
     if (!remote) return;
@@ -199,6 +211,14 @@ export default function Settings() {
     setNotifUnpaid(remote.notif_unpaid ?? true);
     setNotifAlerts(remote.notif_alerts ?? true);
     setNotifDailyReport(remote.notif_daily_report ?? false);
+    setDefaultKmRate(remote.default_km_rate || "");
+    setNightRateMultiplier(remote.night_rate_multiplier || "");
+    setWeekendRateMultiplier(remote.weekend_rate_multiplier || "");
+    setMaxRideAmountAlert(remote.max_ride_amount_alert || "");
+    setBillingEmail(remote.billing_email || "");
+    setZoneActivite(remote.zone_activite || "");
+    setNumeroLicence(remote.numero_licence || "");
+    setIban(remote.iban || "");
   }, [remote]);
 
   const handleSave = () => {
@@ -219,6 +239,14 @@ export default function Settings() {
       notif_unpaid: notifUnpaid,
       notif_alerts: notifAlerts,
       notif_daily_report: notifDailyReport,
+      default_km_rate: defaultKmRate,
+      night_rate_multiplier: nightRateMultiplier,
+      weekend_rate_multiplier: weekendRateMultiplier,
+      max_ride_amount_alert: maxRideAmountAlert,
+      billing_email: billingEmail,
+      zone_activite: zoneActivite,
+      numero_licence: numeroLicence,
+      iban,
     });
   };
 
@@ -244,8 +272,20 @@ export default function Settings() {
           <Row label="Téléphone" border>
             <input style={inputStyle} value={phone} onChange={e => setPhone(e.target.value)} placeholder="06 XX XX XX XX" />
           </Row>
-          <Row label="Adresse" border={false}>
+          <Row label="Adresse" border>
             <input style={inputStyle} value={address} onChange={e => setAddress(e.target.value)} placeholder="Ville..." />
+          </Row>
+          <Row label="Zone d'activité" sub="Ville / département" border>
+            <input style={inputStyle} value={zoneActivite} onChange={e => setZoneActivite(e.target.value)} placeholder="Paris 75" />
+          </Row>
+          <Row label="N° licence / agrément" sub="Carte taxi, VTC, autorisation préf." border>
+            <input style={inputStyle} value={numeroLicence} onChange={e => setNumeroLicence(e.target.value)} placeholder="VTC-2024-001" />
+          </Row>
+          <Row label="Email facturation" sub="Pour l'envoi de factures aux clients" border>
+            <input style={{ ...inputStyle, width: 180 }} type="email" value={billingEmail} onChange={e => setBillingEmail(e.target.value)} placeholder="factures@..." />
+          </Row>
+          <Row label="IBAN" sub="Pour les virements clients" border={false}>
+            <input style={{ ...inputStyle, width: 200 }} value={iban} onChange={e => setIban(e.target.value)} placeholder="FR76 XXXX..." />
           </Row>
         </Section>
 
@@ -325,6 +365,28 @@ export default function Settings() {
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <input style={{ ...inputStyle, width: 48 }} type="number" value={alertDaysBefore} onChange={e => setAlertDaysBefore(e.target.value)} />
               <span style={{ fontSize: "13px", color: "var(--text-3)" }}>jours</span>
+            </div>
+          </Row>
+        </Section>
+
+        {/* Tarification */}
+        <Section title="Tarification">
+          <Row label="Tarif au km par défaut" sub="Pré-remplit le calcul dans les courses" border>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <input style={{ ...inputStyle, width: 60 }} type="number" step="0.01" min="0" value={defaultKmRate} onChange={e => setDefaultKmRate(e.target.value)} placeholder="1.20" />
+              <span style={{ fontSize: "13px", color: "var(--text-3)" }}>€/km</span>
+            </div>
+          </Row>
+          <Row label="Coefficient nuit" sub="Multiplicateur tarif nuit (ex. 1.5)" border>
+            <input style={{ ...inputStyle, width: 60 }} type="number" step="0.01" min="1" value={nightRateMultiplier} onChange={e => setNightRateMultiplier(e.target.value)} placeholder="1.50" />
+          </Row>
+          <Row label="Coefficient week-end" sub="Multiplicateur tarif samedi/dimanche" border>
+            <input style={{ ...inputStyle, width: 60 }} type="number" step="0.01" min="1" value={weekendRateMultiplier} onChange={e => setWeekendRateMultiplier(e.target.value)} placeholder="1.25" />
+          </Row>
+          <Row label="Alerte montant élevé" sub="Avertissement si course > X€" border={false}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <input style={{ ...inputStyle, width: 60 }} type="number" step="1" min="0" value={maxRideAmountAlert} onChange={e => setMaxRideAmountAlert(e.target.value)} placeholder="500" />
+              <span style={{ fontSize: "13px", color: "var(--text-3)" }}>€</span>
             </div>
           </Row>
         </Section>

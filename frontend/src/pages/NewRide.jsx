@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Layout from "../components/Layout";
 import { getDrivers } from "../api/drivers";
 import { createRide } from "../api/rides";
+import { getSettings } from "../api/settings";
 import { useToast } from "../components/Toast";
 
 const PAYMENT_TYPES = [
@@ -37,6 +38,7 @@ export default function NewRide() {
   const qc = useQueryClient();
   const toast = useToast();
   const { data: drivers = [] } = useQuery({ queryKey: ["drivers"], queryFn: getDrivers });
+  const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: getSettings, staleTime: 300000 });
 
   const [form, setForm] = useState({
     client_name: "",
@@ -54,6 +56,13 @@ export default function NewRide() {
   });
   const [kmRate, setKmRate] = useState("");
   const isMedical = ["cpam", "mutuelle"].includes(form.payment_type);
+
+  // Pré-remplir le tarif/km depuis les paramètres de l'entreprise
+  useEffect(() => {
+    if (settings?.default_km_rate && !kmRate) {
+      setKmRate(settings.default_km_rate);
+    }
+  }, [settings]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -63,6 +72,8 @@ export default function NewRide() {
     e.preventDefault();
     if (!form.amount || isNaN(form.amount)) return setError("Montant invalide");
     if (parseFloat(form.amount) === 0 && !window.confirm("Le montant est 0€. Confirmer l'enregistrement ?")) return;
+    const maxAlert = settings?.max_ride_amount_alert ? parseFloat(settings.max_ride_amount_alert) : null;
+    if (maxAlert && parseFloat(form.amount) > maxAlert && !window.confirm(`Le montant (${form.amount}€) dépasse votre seuil d'alerte (${maxAlert}€). Continuer ?`)) return;
     setLoading(true);
     setError("");
     try {

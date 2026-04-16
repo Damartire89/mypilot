@@ -30,3 +30,15 @@ class CompanySettings(Base):
     notif_unpaid = Column(Boolean, default=True)
     notif_alerts = Column(Boolean, default=True)
     notif_daily_report = Column(Boolean, default=False)
+
+    # Tarification
+    default_km_rate = Column(String(10), default="")         # Tarif /km par défaut (€)
+    night_rate_multiplier = Column(String(10), default="")   # Coefficient nuit (ex. 1.5)
+    weekend_rate_multiplier = Column(String(10), default="") # Coefficient week-end
+    max_ride_amount_alert = Column(String(10), default="")   # Alerte si montant > X€
+
+    # Entreprise étendu
+    billing_email = Column(String(200), default="")          # Email facturation (≠ connexion)
+    zone_activite = Column(String(100), default="")          # Ville/département d'activité
+    numero_licence = Column(String(50), default="")          # Licence taxi / agrément préfectoral
+    iban = Column(String(40), default="")

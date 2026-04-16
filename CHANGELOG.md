@@ -5,6 +5,21 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-16 — v1.4 (Paramètres étendus)
+
+### Features
+- `[feature]` Paramètres entreprise : zone d'activité, n° licence/agrément, email facturation, IBAN
+- `[feature]` Section Tarification : tarif/km par défaut, coefficient nuit, coefficient week-end, alerte montant élevé
+- `[feature]` NewRide + EditRide : tarif/km pré-rempli depuis les paramètres
+- `[feature]` NewRide + EditRide : confirmation si montant dépasse le seuil d'alerte configuré
+- `[infra]` Migration Alembic a1b2c3d4e5f6 — 8 nouvelles colonnes sur company_settings
+
+### Fix
+- `[fix]` rides.py : import timedelta manquant (crash garanti sur /stats/summary)
+- `[fix]` Dashboard : widget gasoil affiche l'heure réelle de la dernière mise à jour
+
+---
+
 ## 2026-04-16 — v1.3 (Déploiement démo live)
 
 ### Infra

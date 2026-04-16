@@ -6,6 +6,7 @@ import { SkeletonCard } from "../components/Skeleton";
 import ConfirmModal from "../components/ConfirmModal";
 import { getDrivers } from "../api/drivers";
 import { getRide, updateRide, deleteRide } from "../api/rides";
+import { getSettings } from "../api/settings";
 import { useToast } from "../components/Toast";
 
 const PAYMENT_TYPES = [
@@ -45,11 +46,19 @@ export default function EditRide() {
     queryFn: () => getRide(id),
   });
   const { data: drivers = [] } = useQuery({ queryKey: ["drivers"], queryFn: getDrivers });
+  const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: getSettings, staleTime: 300000 });
 
   const [form, setForm] = useState(null);
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [kmRate, setKmRate] = useState("");
+
+  // Pré-remplir tarif/km depuis les paramètres si pas déjà renseigné
+  useEffect(() => {
+    if (settings?.default_km_rate && !kmRate) {
+      setKmRate(settings.default_km_rate);
+    }
+  }, [settings]);
 
   useEffect(() => {
     if (!ride) return;
@@ -101,6 +110,8 @@ export default function EditRide() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.amount || isNaN(form.amount)) return setError("Montant invalide");
+    const maxAlert = settings?.max_ride_amount_alert ? parseFloat(settings.max_ride_amount_alert) : null;
+    if (maxAlert && parseFloat(form.amount) > maxAlert && !window.confirm(`Le montant (${form.amount}€) dépasse votre seuil d'alerte (${maxAlert}€). Continuer ?`)) return;
     updateMutation.mutate({
       ...form,
       amount: parseFloat(form.amount),

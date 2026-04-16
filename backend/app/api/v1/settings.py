@@ -42,6 +42,18 @@ class SettingsUpdate(BaseModel):
     notif_alerts: Optional[bool] = None
     notif_daily_report: Optional[bool] = None
 
+    # Tarification
+    default_km_rate: Optional[str] = None
+    night_rate_multiplier: Optional[str] = None
+    weekend_rate_multiplier: Optional[str] = None
+    max_ride_amount_alert: Optional[str] = None
+
+    # Entreprise étendu
+    billing_email: Optional[str] = None
+    zone_activite: Optional[str] = None
+    numero_licence: Optional[str] = None
+    iban: Optional[str] = None
+
 
 def get_or_create_settings(company_id: int, db: Session) -> CompanySettings:
     s = db.query(CompanySettings).filter(CompanySettings.company_id == company_id).first()
@@ -77,6 +89,16 @@ def get_settings(company: Company = Depends(get_current_company), db: Session = 
         "notif_unpaid": s.notif_unpaid,
         "notif_alerts": s.notif_alerts,
         "notif_daily_report": s.notif_daily_report,
+        # Tarification
+        "default_km_rate": s.default_km_rate or "",
+        "night_rate_multiplier": s.night_rate_multiplier or "",
+        "weekend_rate_multiplier": s.weekend_rate_multiplier or "",
+        "max_ride_amount_alert": s.max_ride_amount_alert or "",
+        # Entreprise étendu
+        "billing_email": s.billing_email or "",
+        "zone_activite": s.zone_activite or "",
+        "numero_licence": s.numero_licence or "",
+        "iban": s.iban or "",
     }
 
 
@@ -100,6 +122,8 @@ def update_settings(body: SettingsUpdate, company: Company = Depends(get_current
         "invoice_prefix", "invoice_next_number", "tva_rate", "invoice_footer",
         "alert_days_before", "hide_ca", "currency", "date_format", "week_start",
         "notif_new_ride", "notif_unpaid", "notif_alerts", "notif_daily_report",
+        "default_km_rate", "night_rate_multiplier", "weekend_rate_multiplier", "max_ride_amount_alert",
+        "billing_email", "zone_activite", "numero_licence", "iban",
     ]
     for field in simple_fields:
         val = getattr(body, field)
