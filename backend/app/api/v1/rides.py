@@ -11,7 +11,7 @@ from app.schemas.ride import RideCreate, RideUpdate, RideOut
 from app.auth import get_current_company, require_write_access
 from app.models.user import User
 from typing import List, Optional
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 import csv
 import io
 

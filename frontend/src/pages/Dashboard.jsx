@@ -282,7 +282,11 @@ export default function Dashboard() {
                   Prix carburant — France
                 </span>
               </div>
-              <span style={{ fontSize: "10px", color: "var(--text-3)" }}>Mis à jour aujourd'hui</span>
+              <span style={{ fontSize: "10px", color: "var(--text-3)" }}>
+                {gasoil.fetched_at
+                  ? `Mis à jour à ${new Date(gasoil.fetched_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
+                  : "Prix carburant"}
+              </span>
             </div>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {Object.entries(gasoil.prix).map(([label, prix]) => (
