@@ -42,75 +42,77 @@ function VehicleModal({ vehicle, onClose, onSave }) {
       onClick={onClose}
     >
       <div className="modal-sheet" onClick={e => e.stopPropagation()}>
-        <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
-        <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>
-          {vehicle ? "Modifier le véhicule" : "Nouveau véhicule"}
-        </p>
+        <div className="modal-sheet-body">
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
+          <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>
+            {vehicle ? "Modifier le véhicule" : "Nouveau véhicule"}
+          </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "13px" }}>
-          <div>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Immatriculation *</label>
-            <input
-              style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box", textTransform: "uppercase" }}
-              value={form.plate} onChange={e => set("plate", e.target.value.toUpperCase())} placeholder="AB-123-CD" required
-              onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"}
-            />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            {[{ k: "brand", label: "Marque", ph: "Renault" }, { k: "model", label: "Modèle", ph: "Trafic" }].map(({ k, label, ph }) => (
-              <div key={k}>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
-                <input style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
-                  value={form[k]} onChange={e => set(k, e.target.value)} placeholder={ph}
-                  onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
-              </div>
-            ))}
-          </div>
-          <div>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Année</label>
-            <input type="number" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
-              value={form.year} onChange={e => set("year", e.target.value)} placeholder="2023" min="1990" max="2030"
-              onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
-          </div>
-          {vehicle && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "13px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Statut</label>
-              <div style={{ display: "flex", gap: "6px" }}>
-                {Object.entries(STATUS).map(([k, v]) => (
-                  <button key={k} type="button" onClick={() => set("status", k)}
-                    style={{
-                      flex: 1, padding: "8px", borderRadius: "8px", fontSize: "11.5px", fontWeight: 500,
-                      border: form.status === k ? `1px solid ${v.color}` : "1px solid var(--border)",
-                      background: form.status === k ? v.bg : "transparent",
-                      color: form.status === k ? v.color : "var(--text-3)", cursor: "pointer",
-                    }}>
-                    {v.label}
-                  </button>
-                ))}
-              </div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Immatriculation *</label>
+              <input
+                style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box", textTransform: "uppercase" }}
+                value={form.plate} onChange={e => set("plate", e.target.value.toUpperCase())} placeholder="AB-123-CD" required
+                onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"}
+              />
             </div>
-          )}
-          <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
-            <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>Documents & alertes</p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-              {[
-                { k: "ct_expiry", label: "Contrôle technique" },
-                { k: "insurance_expiry", label: "Assurance" },
-                { k: "ads_expiry", label: "ADS (autorisation)" },
-                { k: "taximetre_expiry", label: "Vignette taximètre" },
-              ].map(({ k, label }) => (
+              {[{ k: "brand", label: "Marque", ph: "Renault" }, { k: "model", label: "Modèle", ph: "Trafic" }].map(({ k, label, ph }) => (
                 <div key={k}>
                   <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
-                  <input type="date" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
-                    value={form[k]} onChange={e => set(k, e.target.value)}
+                  <input style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                    value={form[k]} onChange={e => set(k, e.target.value)} placeholder={ph}
                     onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
                 </div>
               ))}
             </div>
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Année</label>
+              <input type="number" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                value={form.year} onChange={e => set("year", e.target.value)} placeholder="2023" min="1990" max="2030"
+                onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+            </div>
+            {vehicle && (
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Statut</label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {Object.entries(STATUS).map(([k, v]) => (
+                    <button key={k} type="button" onClick={() => set("status", k)}
+                      style={{
+                        flex: 1, padding: "8px", borderRadius: "8px", fontSize: "11.5px", fontWeight: 500,
+                        border: form.status === k ? `1px solid ${v.color}` : "1px solid var(--border)",
+                        background: form.status === k ? v.bg : "transparent",
+                        color: form.status === k ? v.color : "var(--text-3)", cursor: "pointer",
+                      }}>
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
+              <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>Documents & alertes</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                {[
+                  { k: "ct_expiry", label: "Contrôle technique" },
+                  { k: "insurance_expiry", label: "Assurance" },
+                  { k: "ads_expiry", label: "ADS (autorisation)" },
+                  { k: "taximetre_expiry", label: "Vignette taximètre" },
+                ].map(({ k, label }) => (
+                  <div key={k}>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
+                    <input type="date" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                      value={form[k]} onChange={e => set(k, e.target.value)}
+                      onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+        <div className="modal-actions">
           <button onClick={onClose} style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500, border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", cursor: "pointer" }}>
             Annuler
           </button>

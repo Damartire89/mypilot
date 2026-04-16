@@ -37,79 +37,81 @@ function DriverModal({ driver, onClose, onSave }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-sheet" onClick={e => e.stopPropagation()}>
-        <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
-        <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>
-          {driver ? "Modifier le chauffeur" : "Nouveau chauffeur"}
-        </p>
+        <div className="modal-sheet-body">
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
+          <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>
+            {driver ? "Modifier le chauffeur" : "Nouveau chauffeur"}
+          </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "13px" }}>
-          {[
-            { key: "name", label: "Nom complet", placeholder: "Prénom NOM", required: true },
-            { key: "phone", label: "Téléphone", placeholder: "06 XX XX XX XX" },
-            { key: "license_number", label: "N° licence / carte pro", placeholder: "ex. VTC-2024-001" },
-          ].map(({ key, label, placeholder, required }) => (
-            <div key={key}>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>
-                {label}{required && " *"}
-              </label>
-              <input
-                style={{
-                  width: "100%", border: "1px solid var(--border)", borderRadius: "9px",
-                  padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)",
-                  color: "var(--text)", boxSizing: "border-box",
-                }}
-                value={form[key]}
-                onChange={e => set(key, e.target.value)}
-                placeholder={placeholder}
-                required={required}
-                onFocus={e => e.target.style.borderColor = "var(--brand)"}
-                onBlur={e => e.target.style.borderColor = "var(--border)"}
-              />
-            </div>
-          ))}
-
-          {driver && (
-            <div>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Statut</label>
-              <div style={{ display: "flex", gap: "6px" }}>
-                {Object.entries(STATUS).map(([k, v]) => (
-                  <button
-                    key={k} type="button" onClick={() => set("status", k)}
-                    style={{
-                      flex: 1, padding: "8px", borderRadius: "8px", fontSize: "12px", fontWeight: 500,
-                      border: form.status === k ? `1px solid ${v.color}` : "1px solid var(--border)",
-                      background: form.status === k ? v.bg : "transparent",
-                      color: form.status === k ? v.color : "var(--text-3)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {v.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Documents FR */}
-        <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px", marginTop: "4px" }}>
-          <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>Documents FR</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "13px" }}>
             {[
-              { k: "carte_pro_expiry", label: "Carte pro taxi" },
-              { k: "carte_vtc_expiry", label: "Carte VTC" },
-            ].map(({ k, label }) => (
-              <div key={k}>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
-                <input type="date" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
-                  value={form[k]} onChange={e => set(k, e.target.value)}
-                  onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+              { key: "name", label: "Nom complet", placeholder: "Prénom NOM", required: true },
+              { key: "phone", label: "Téléphone", placeholder: "06 XX XX XX XX" },
+              { key: "license_number", label: "N° licence / carte pro", placeholder: "ex. VTC-2024-001" },
+            ].map(({ key, label, placeholder, required }) => (
+              <div key={key}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>
+                  {label}{required && " *"}
+                </label>
+                <input
+                  style={{
+                    width: "100%", border: "1px solid var(--border)", borderRadius: "9px",
+                    padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)",
+                    color: "var(--text)", boxSizing: "border-box",
+                  }}
+                  value={form[key]}
+                  onChange={e => set(key, e.target.value)}
+                  placeholder={placeholder}
+                  required={required}
+                  onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                  onBlur={e => e.target.style.borderColor = "var(--border)"}
+                />
               </div>
             ))}
+
+            {driver && (
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Statut</label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {Object.entries(STATUS).map(([k, v]) => (
+                    <button
+                      key={k} type="button" onClick={() => set("status", k)}
+                      style={{
+                        flex: 1, padding: "8px", borderRadius: "8px", fontSize: "12px", fontWeight: 500,
+                        border: form.status === k ? `1px solid ${v.color}` : "1px solid var(--border)",
+                        background: form.status === k ? v.bg : "transparent",
+                        color: form.status === k ? v.color : "var(--text-3)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Documents FR */}
+          <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px", marginTop: "16px" }}>
+            <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>Documents FR</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              {[
+                { k: "carte_pro_expiry", label: "Carte pro taxi" },
+                { k: "carte_vtc_expiry", label: "Carte VTC" },
+              ].map(({ k, label }) => (
+                <div key={k}>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
+                  <input type="date" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                    value={form[k]} onChange={e => set(k, e.target.value)}
+                    onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+        <div className="modal-actions">
           <button
             onClick={onClose}
             style={{

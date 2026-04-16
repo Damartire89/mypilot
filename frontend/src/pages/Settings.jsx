@@ -592,23 +592,25 @@ export default function Settings() {
       {pwModal && (
         <div className="modal-overlay" onClick={() => setPwModal(false)}>
           <div className="modal-sheet" onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
-            <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>Changer le mot de passe</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {[
-                { label: "Mot de passe actuel", val: pwCurrent, set: setPwCurrent, ac: "current-password" },
-                { label: "Nouveau mot de passe", val: pwNew, set: setPwNew, ac: "new-password", ph: "6 caractères minimum" },
-                { label: "Confirmer le nouveau mot de passe", val: pwConfirm, set: setPwConfirm, ac: "new-password" },
-              ].map(({ label, val, set, ac, ph }) => (
-                <div key={label}>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
-                  <input type="password" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
-                    value={val} onChange={e => set(e.target.value)} placeholder={ph || "••••••••"} autoComplete={ac}
-                    onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
-                </div>
-              ))}
+            <div className="modal-sheet-body">
+              <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
+              <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>Changer le mot de passe</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {[
+                  { label: "Mot de passe actuel", val: pwCurrent, set: setPwCurrent, ac: "current-password" },
+                  { label: "Nouveau mot de passe", val: pwNew, set: setPwNew, ac: "new-password", ph: "6 caractères minimum" },
+                  { label: "Confirmer le nouveau mot de passe", val: pwConfirm, set: setPwConfirm, ac: "new-password" },
+                ].map(({ label, val, set, ac, ph }) => (
+                  <div key={label}>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>{label}</label>
+                    <input type="password" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                      value={val} onChange={e => set(e.target.value)} placeholder={ph || "••••••••"} autoComplete={ac}
+                      onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+                  </div>
+                ))}
+              </div>
             </div>
-            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+            <div className="modal-actions">
               <button onClick={() => { setPwModal(false); setPwCurrent(""); setPwNew(""); setPwConfirm(""); }}
                 style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500, border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", cursor: "pointer" }}>
                 Annuler
@@ -626,6 +628,7 @@ export default function Settings() {
       {deleteModal && (
         <div className="modal-overlay" onClick={() => { setDeleteModal(false); setCancelStep("survey"); setCancelReason(null); }}>
           <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-sheet-body">
             <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
 
             {/* Étape 1 — Exit survey */}
@@ -717,7 +720,7 @@ export default function Settings() {
                   <a href="mailto:support@mypilot.app" style={{ color: "var(--brand)", fontWeight: 600 }}>support@mypilot.app</a>
                   {" "}depuis l'adresse associée à votre compte.
                 </p>
-                <div style={{ display: "flex", gap: "10px" }}>
+                <div className="modal-actions">
                   <button onClick={() => { setDeleteModal(false); setCancelStep("survey"); setCancelReason(null); }}
                     style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500, border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", cursor: "pointer" }}>
                     Annuler
@@ -729,6 +732,7 @@ export default function Settings() {
                 </div>
               </>
             )}
+            </div>
           </div>
         </div>
       )}
@@ -737,26 +741,39 @@ export default function Settings() {
       {inviteModal && (
         <div className="modal-overlay" onClick={() => setInviteModal(false)}>
           <div className="modal-sheet" onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
-            <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>Inviter un membre</p>
-            {!inviteLink ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Email</label>
-                  <input type="email" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
-                    value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="prenom@email.com"
-                    onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+            <div className="modal-sheet-body">
+              <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--border)", margin: "0 auto 20px" }} />
+              <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 18px" }}>Inviter un membre</p>
+              {!inviteLink ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Email</label>
+                    <input type="email" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box" }}
+                      value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="prenom@email.com"
+                      onFocus={e => e.target.style.borderColor = "var(--brand)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Rôle</label>
+                    <select style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box", cursor: "pointer" }}
+                      value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
+                      <option value="admin">Admin — accès complet</option>
+                      <option value="manager">Manager — saisie et modification</option>
+                      <option value="readonly">Lecture seule — consultation uniquement</option>
+                    </select>
+                  </div>
                 </div>
+              ) : (
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: "var(--text-2)", marginBottom: "5px" }}>Rôle</label>
-                  <select style={{ width: "100%", border: "1px solid var(--border)", borderRadius: "9px", padding: "9px 12px", fontSize: "13.5px", background: "var(--bg)", color: "var(--text)", boxSizing: "border-box", cursor: "pointer" }}
-                    value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
-                    <option value="admin">Admin — accès complet</option>
-                    <option value="manager">Manager — saisie et modification</option>
-                    <option value="readonly">Lecture seule — consultation uniquement</option>
-                  </select>
+                  <p style={{ fontSize: "13px", color: "var(--text-2)", margin: "0 0 10px" }}>Lien d'invitation — valable 7 jours :</p>
+                  <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "9px", padding: "10px 12px", fontSize: "12px", fontFamily: "monospace", color: "var(--text-2)", wordBreak: "break-all" }}>
+                    {inviteLink}
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+              )}
+            </div>
+            <div className="modal-actions">
+              {!inviteLink ? (
+                <>
                   <button onClick={() => setInviteModal(false)} style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500, border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", cursor: "pointer" }}>
                     Annuler
                   </button>
@@ -764,15 +781,9 @@ export default function Settings() {
                     style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 600, border: "none", background: "var(--brand)", color: "white", cursor: "pointer", opacity: (!inviteEmail || inviteMutation.isPending) ? 0.5 : 1 }}>
                     {inviteMutation.isPending ? "Génération..." : "Générer le lien"}
                   </button>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <p style={{ fontSize: "13px", color: "var(--text-2)", margin: "0 0 10px" }}>Lien d'invitation — valable 7 jours :</p>
-                <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "9px", padding: "10px 12px", fontSize: "12px", fontFamily: "monospace", color: "var(--text-2)", wordBreak: "break-all", marginBottom: "14px" }}>
-                  {inviteLink}
-                </div>
-                <div style={{ display: "flex", gap: "10px" }}>
+                </>
+              ) : (
+                <>
                   <button onClick={() => { navigator.clipboard.writeText(inviteLink); toast("Lien copié !", "success"); }}
                     style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 600, border: "none", background: "var(--brand)", color: "white", cursor: "pointer" }}>
                     Copier le lien
@@ -780,9 +791,9 @@ export default function Settings() {
                   <button onClick={() => setInviteModal(false)} style={{ flex: 1, padding: "11px", borderRadius: "9px", fontSize: "13.5px", fontWeight: 500, border: "1px solid var(--border)", background: "transparent", color: "var(--text-2)", cursor: "pointer" }}>
                     Fermer
                   </button>
-                </div>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
