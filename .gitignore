@@ -30,7 +30,7 @@ Thumbs.db
 frontend/screenshots/
 frontend/screenshots.mjs
 
-# Design / maquettes (pas nécessaires en prod)
+# Design / maquettes / plans de session (pas nécessaires en prod)
 mockups/
 wireframes/
-docs/
+docs/superpowers/

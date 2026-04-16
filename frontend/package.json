@@ -1,7 +1,7 @@
 {
-  "name": "frontend",
+  "name": "mypilot-frontend",
   "private": true,
-  "version": "1.0.0-demo",
+  "version": "1.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
