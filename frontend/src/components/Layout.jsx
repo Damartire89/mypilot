@@ -108,7 +108,6 @@ function Sidebar({ company, user }) {
 
   return (
     <aside style={{
-      display: "flex",
       flexDirection: "column",
       width: "var(--sidebar-width)",
       minHeight: "100vh",
