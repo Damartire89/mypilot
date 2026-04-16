@@ -5,7 +5,7 @@ import Layout from "../components/Layout";
 import { SkeletonCard } from "../components/Skeleton";
 import ConfirmModal from "../components/ConfirmModal";
 import { getDrivers } from "../api/drivers";
-import { getRide, updateRide, deleteRide } from "../api/rides";
+import { getRide, updateRide, deleteRide, downloadRidePDF } from "../api/rides";
 import { getSettings } from "../api/settings";
 import { useToast } from "../components/Toast";
 
@@ -52,6 +52,7 @@ export default function EditRide() {
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [kmRate, setKmRate] = useState("");
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   // Pré-remplir tarif/km depuis les paramètres si pas déjà renseigné
   useEffect(() => {
@@ -159,21 +160,48 @@ export default function EditRide() {
             </Link>
             <p style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>Modifier la course</p>
           </div>
-          <button
-            onClick={() => setConfirmDelete(true)}
-            disabled={deleteMutation.isPending}
-            style={{
-              width: 30, height: 30, borderRadius: "8px",
-              background: "var(--danger-bg)", border: "none",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", flexShrink: 0,
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-              <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-            </svg>
-          </button>
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              type="button"
+              onClick={async () => {
+                setPdfLoading(true);
+                try { await downloadRidePDF(id); }
+                catch { toast("Erreur lors de la génération du PDF", "error"); }
+                finally { setPdfLoading(false); }
+              }}
+              disabled={pdfLoading}
+              title="Télécharger la facture PDF"
+              style={{
+                width: 30, height: 30, borderRadius: "8px",
+                background: "var(--surface)", border: "1px solid var(--border)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: pdfLoading ? "wait" : "pointer", flexShrink: 0,
+                opacity: pdfLoading ? 0.5 : 1,
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" strokeWidth="2" strokeLinecap="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <polyline points="9 15 12 18 15 15"/>
+              </svg>
+            </button>
+            <button
+              onClick={() => setConfirmDelete(true)}
+              disabled={deleteMutation.isPending}
+              style={{
+                width: 30, height: 30, borderRadius: "8px",
+                background: "var(--danger-bg)", border: "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", flexShrink: 0,
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>

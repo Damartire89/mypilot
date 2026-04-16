@@ -10,6 +10,7 @@ from app.models.settings import CompanySettings
 from app.schemas.ride import RideCreate, RideUpdate, RideOut
 from app.auth import get_current_company, require_write_access
 from app.models.user import User
+from app.pdf import generate_invoice_pdf
 from typing import List, Optional
 from datetime import date, datetime, timezone, timedelta
 import csv
@@ -124,6 +125,27 @@ def export_rides_csv(
     return StreamingResponse(
         iter([content]),
         media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/export/pdf/{ride_id}")
+def export_ride_pdf(
+    ride_id: int,
+    company: Company = Depends(get_current_company),
+    db: Session = Depends(get_db),
+):
+    ride = db.query(Ride).filter(Ride.id == ride_id, Ride.company_id == company.id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Course introuvable")
+    driver = db.query(Driver).filter(Driver.id == ride.driver_id).first() if ride.driver_id else None
+    settings = db.query(CompanySettings).filter_by(company_id=company.id).first()
+    pdf_bytes = generate_invoice_pdf(ride, company, driver, settings)
+    ref = ride.reference or f"course-{ride.id}"
+    filename = f"facture_{ref}.pdf"
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
