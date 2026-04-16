@@ -5,6 +5,20 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-16 — v1.5 (Audit + corrections + index DB)
+
+### Fix
+- `[fix]` drivers.py + vehicles.py : `ALERT_DAYS` hardcodé → lit désormais `alert_days_before` depuis `CompanySettings` (fallback 30j)
+- `[fix]` rides.py `stats_monthly` : `by_driver` groupé par `Driver.id` (était `Driver.name` → fusion si 2 chauffeurs avec le même prénom)
+- `[fix]` rides.py `stats_monthly` : `rides_count` filtre maintenant uniquement `status = "paid"` (cohérent avec `ca_total`)
+- `[fix]` admin.py `delete_company` : supprime désormais `CompanySettings` et `Invitation` (données orphelines évitées)
+- `[fix]` DriverProfile.jsx : heatmap "jours travaillés" utilise `Europe/Paris` pour déterminer le jour (évite glissement J+1 pour les courses après 23h)
+
+### Infra
+- `[infra]` Migration Alembic b2c3d4e5f6a7 — 4 index sur la table `rides` (`company_id`, `company_id+ride_at`, `driver_id`, `status`)
+
+---
+
 ## 2026-04-16 — v1.4 (Paramètres étendus)
 
 ### Features

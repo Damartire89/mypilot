@@ -5,18 +5,24 @@ from app.database import get_db
 from app.models.driver import Driver
 from app.models.ride import Ride
 from app.models.company import Company
+from app.models.settings import CompanySettings
 from app.schemas.driver import DriverCreate, DriverUpdate, DriverOut
 from app.auth import get_current_company, require_write_access
 from app.models.user import User
 from typing import List, Optional
 from datetime import datetime, timezone, date
 
-ALERT_DAYS = 30
-
 router = APIRouter(prefix="/drivers", tags=["drivers"])
 
 
-def _driver_alerts(driver: Driver) -> dict:
+def _get_alert_days(company_id: int, db: Session) -> int:
+    s = db.query(CompanySettings).filter_by(company_id=company_id).first()
+    if s and s.alert_days_before:
+        return s.alert_days_before
+    return 30
+
+
+def _driver_alerts(driver: Driver, alert_days: int = 30) -> dict:
     today = date.today()
     def _alert(expiry):
         if not expiry:
@@ -24,7 +30,7 @@ def _driver_alerts(driver: Driver) -> dict:
         delta = (expiry - today).days
         if delta < 0:
             return "expired"
-        if delta <= ALERT_DAYS:
+        if delta <= alert_days:
             return f"expires_in_{delta}"
         return None
     return {
@@ -33,8 +39,8 @@ def _driver_alerts(driver: Driver) -> dict:
     }
 
 
-def _to_driver_out(driver: Driver) -> DriverOut:
-    alerts = _driver_alerts(driver)
+def _to_driver_out(driver: Driver, alert_days: int = 30) -> DriverOut:
+    alerts = _driver_alerts(driver, alert_days)
     return DriverOut(
         id=driver.id,
         name=driver.name,
@@ -51,8 +57,9 @@ def _to_driver_out(driver: Driver) -> DriverOut:
 
 @router.get("", response_model=List[DriverOut])
 def list_drivers(company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+    alert_days = _get_alert_days(company.id, db)
     drivers = db.query(Driver).filter(Driver.company_id == company.id).all()
-    return [_to_driver_out(d) for d in drivers]
+    return [_to_driver_out(d, alert_days) for d in drivers]
 
 
 @router.post("", response_model=DriverOut, status_code=201)
@@ -61,7 +68,8 @@ def create_driver(body: DriverCreate, company: Company = Depends(get_current_com
     db.add(driver)
     db.commit()
     db.refresh(driver)
-    return _to_driver_out(driver)
+    alert_days = _get_alert_days(company.id, db)
+    return _to_driver_out(driver, alert_days)
 
 
 @router.patch("/{driver_id}", response_model=DriverOut)
@@ -73,7 +81,8 @@ def update_driver(driver_id: int, body: DriverUpdate, company: Company = Depends
         setattr(driver, field, value)
     db.commit()
     db.refresh(driver)
-    return _to_driver_out(driver)
+    alert_days = _get_alert_days(company.id, db)
+    return _to_driver_out(driver, alert_days)
 
 
 @router.delete("/{driver_id}", status_code=204)
@@ -99,6 +108,7 @@ def driver_stats(
     if not driver:
         raise HTTPException(status_code=404, detail="Chauffeur introuvable")
 
+    alert_days = _get_alert_days(company.id, db)
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     year = year or now.year
     month = month or now.month
@@ -163,7 +173,7 @@ def driver_stats(
     ).group_by(Ride.payment_type).all()
 
     return {
-        "driver": _to_driver_out(driver).model_dump(),
+        "driver": _to_driver_out(driver, alert_days).model_dump(),
         "year": year,
         "month": month,
         "ca_month": float(ca_month),

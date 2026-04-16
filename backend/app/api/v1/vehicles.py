@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.vehicle import Vehicle
 from app.models.company import Company
+from app.models.settings import CompanySettings
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleOut
 from app.auth import get_current_company, require_write_access
 from app.models.user import User
@@ -11,32 +12,37 @@ from datetime import date
 
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 
-ALERT_DAYS = 30  # Alerter si expiry dans moins de 30 jours
+
+def _get_alert_days(company_id: int, db: Session) -> int:
+    s = db.query(CompanySettings).filter_by(company_id=company_id).first()
+    if s and s.alert_days_before:
+        return s.alert_days_before
+    return 30
 
 
-def _alert_for_date(expiry_date, today) -> str | None:
+def _alert_for_date(expiry_date, today, alert_days: int = 30) -> str | None:
     if not expiry_date:
         return None
     delta = (expiry_date - today).days
     if delta < 0:
         return "expired"
-    if delta <= ALERT_DAYS:
+    if delta <= alert_days:
         return f"expires_in_{delta}"
     return None
 
 
-def _compute_alerts(vehicle: Vehicle) -> dict:
+def _compute_alerts(vehicle: Vehicle, alert_days: int = 30) -> dict:
     today = date.today()
     return {
-        "ct_alert": _alert_for_date(vehicle.ct_expiry, today),
-        "insurance_alert": _alert_for_date(vehicle.insurance_expiry, today),
-        "ads_alert": _alert_for_date(vehicle.ads_expiry, today),
-        "taximetre_alert": _alert_for_date(vehicle.taximetre_expiry, today),
+        "ct_alert": _alert_for_date(vehicle.ct_expiry, today, alert_days),
+        "insurance_alert": _alert_for_date(vehicle.insurance_expiry, today, alert_days),
+        "ads_alert": _alert_for_date(vehicle.ads_expiry, today, alert_days),
+        "taximetre_alert": _alert_for_date(vehicle.taximetre_expiry, today, alert_days),
     }
 
 
-def _to_out(vehicle: Vehicle) -> VehicleOut:
-    alerts = _compute_alerts(vehicle)
+def _to_out(vehicle: Vehicle, alert_days: int = 30) -> VehicleOut:
+    alerts = _compute_alerts(vehicle, alert_days)
     return VehicleOut(
         id=vehicle.id,
         plate=vehicle.plate,
@@ -58,8 +64,9 @@ def _to_out(vehicle: Vehicle) -> VehicleOut:
 
 @router.get("", response_model=List[VehicleOut])
 def list_vehicles(company: Company = Depends(get_current_company), db: Session = Depends(get_db)):
+    alert_days = _get_alert_days(company.id, db)
     vehicles = db.query(Vehicle).filter(Vehicle.company_id == company.id).all()
-    return [_to_out(v) for v in vehicles]
+    return [_to_out(v, alert_days) for v in vehicles]
 
 
 @router.post("", response_model=VehicleOut, status_code=201)
@@ -68,7 +75,8 @@ def create_vehicle(body: VehicleCreate, company: Company = Depends(get_current_c
     db.add(vehicle)
     db.commit()
     db.refresh(vehicle)
-    return _to_out(vehicle)
+    alert_days = _get_alert_days(company.id, db)
+    return _to_out(vehicle, alert_days)
 
 
 @router.patch("/{vehicle_id}", response_model=VehicleOut)
@@ -80,7 +88,8 @@ def update_vehicle(vehicle_id: int, body: VehicleUpdate, company: Company = Depe
         setattr(vehicle, field, value)
     db.commit()
     db.refresh(vehicle)
-    return _to_out(vehicle)
+    alert_days = _get_alert_days(company.id, db)
+    return _to_out(vehicle, alert_days)
 
 
 @router.delete("/{vehicle_id}", status_code=204)

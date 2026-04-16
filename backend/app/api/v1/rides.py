@@ -205,6 +205,7 @@ def stats_monthly(
 
     rides_count = db.query(func.count(Ride.id)).filter(
         Ride.company_id == company.id,
+        Ride.status == "paid",
         extract("year", Ride.ride_at) == year,
         extract("month", Ride.ride_at) == month,
     ).scalar() or 0
@@ -231,6 +232,7 @@ def stats_monthly(
     ).group_by(Ride.payment_type).all()
 
     by_driver = db.query(
+        Driver.id,
         Driver.name,
         func.sum(Ride.amount).label("ca"),
         func.count(Ride.id).label("rides"),
@@ -238,7 +240,7 @@ def stats_monthly(
         Ride.company_id == company.id,
         extract("year", Ride.ride_at) == year,
         extract("month", Ride.ride_at) == month,
-    ).group_by(Driver.name).order_by(func.sum(Ride.amount).desc()).all()
+    ).group_by(Driver.id, Driver.name).order_by(func.sum(Ride.amount).desc()).all()
 
     return {
         "year": year,

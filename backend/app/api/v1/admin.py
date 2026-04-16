@@ -7,6 +7,8 @@ from app.models.company import Company
 from app.models.ride import Ride
 from app.models.driver import Driver
 from app.models.vehicle import Vehicle
+from app.models.settings import CompanySettings
+from app.models.invitation import Invitation
 from app.schemas.invitation import MemberOut, MemberRoleUpdate, CompanyOut
 from app.auth import require_role, hash_password
 from typing import List
@@ -60,6 +62,8 @@ def delete_company(
         db.query(Ride).filter(Ride.company_id == company_id).delete()
         db.query(Driver).filter(Driver.company_id == company_id).delete()
         db.query(Vehicle).filter(Vehicle.company_id == company_id).delete()
+        db.query(Invitation).filter(Invitation.company_id == company_id).delete()
+        db.query(CompanySettings).filter(CompanySettings.company_id == company_id).delete()
         db.query(User).filter(User.company_id == company_id).delete()
         db.delete(company)
         db.commit()

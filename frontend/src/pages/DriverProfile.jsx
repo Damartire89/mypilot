@@ -208,7 +208,10 @@ export default function DriverProfile() {
               const daysInMonth = new Date(year, month, 0).getDate();
               const firstDow = new Date(year, month - 1, 1).getDay(); // 0=dim
               const startOffset = (firstDow === 0 ? 6 : firstDow - 1); // lundi=0
-              const workedDays = new Set(stats.rides.map(r => r.ride_at ? new Date(r.ride_at).getDate() : null).filter(Boolean));
+              const workedDays = new Set(stats.rides.map(r => {
+                if (!r.ride_at) return null;
+                return parseInt(new Date(r.ride_at).toLocaleDateString("fr-FR", { day: "numeric", timeZone: "Europe/Paris" }), 10);
+              }).filter(Boolean));
               const today = now.getDate();
               const isThisMonth = year === now.getFullYear() && month === now.getMonth() + 1;
               return (
