@@ -5,6 +5,39 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-16 — v1.3 (Déploiement démo live)
+
+### Infra
+- `[infra]` Déploiement backend FastAPI sur Render Web Service
+- `[infra]` Base de données PostgreSQL sur Render (réseau interne)
+- `[infra]` Frontend Vercel configuré avec VITE_API_URL → Render
+- `[infra]` Migrations Alembic appliquées sur la DB cloud
+- `[infra]` Seed démo exécuté — comptes demo@taximartin.fr et admin@mypilot.app opérationnels
+
+### Doc
+- `[doc]` DEPLOY.md — procédure complète mise à jour (Render + Vercel)
+- `[doc]` .env.example frontend et backend mis à jour avec les vraies valeurs de prod
+
+### Fix
+- `[fix]` Suppression de railpack.toml (Railway abandonné, Render utilisé)
+- `[fix]` Start command Render intègre migrations + seed au premier démarrage
+
+---
+
+## 2026-04-15 — v1.3 (Corrections UX + dark mode)
+
+### Corrections UX
+- `[fix]` Login — validation password min 8 chars côté client + hint UI en mode register
+- `[fix]` Onboarding — "Passer la configuration" visible dès l'étape 1
+- `[fix]` Settings — suppression compte → modal avec mailto prérempli
+- `[design]` index.css — dark mode complet via @media (prefers-color-scheme: dark)
+- `[feature]` Dashboard — chaque course récente cliquable → /rides/:id/edit
+- `[feature]` Rides — champ de recherche textuelle (client, départ, arrivée) avec reset ×
+- `[fix]` Settings — bouton "Sauvegarder" sticky en bas mobile / inline desktop
+- `[fix]` NewRide — confirmation native si montant = 0€
+
+---
+
 ## 2026-04-14 — v1.0.0-demo (Redesign complet + Onboarding)
 
 ### Design system
