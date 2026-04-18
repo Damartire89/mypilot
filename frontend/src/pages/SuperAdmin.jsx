@@ -275,7 +275,7 @@ export default function SuperAdmin() {
                 )}
               </div>
             ))}
-            {auditLogs && auditLogs.items.length === 0 && (
+            {auditLogs && (auditLogs.items?.length ?? 0) === 0 && (
               <div style={{ padding: "30px 20px", textAlign: "center" }}>
                 <p style={{ fontSize: "12.5px", color: "var(--text-3)", margin: 0 }}>Aucun log avec ces filtres</p>
               </div>

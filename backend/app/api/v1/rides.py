@@ -53,8 +53,9 @@ def list_rides(
 
 
 @router.post("", response_model=RideOut, status_code=201)
-def create_ride(body: RideCreate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
+def create_ride(body: RideCreate, request: Request, company: Company = Depends(get_current_company), db: Session = Depends(get_db), current_user: User = Depends(require_write_access)):
     data = body.model_dump()
+    invoice_issued = False
     if not data.get("reference"):
         settings = (
             db.query(CompanySettings)
@@ -70,8 +71,17 @@ def create_ride(body: RideCreate, company: Company = Depends(get_current_company
             settings.invoice_next_number = num + 1
             db.add(settings)
             data["issued_at"] = datetime.now(timezone.utc)
+            invoice_issued = True
     ride = Ride(**data, company_id=company.id)
     db.add(ride)
+    db.flush()
+    if invoice_issued:
+        log_action(
+            db, current_user, "invoice_issued", "ride",
+            entity_id=ride.id,
+            details={"reference": ride.reference, "amount": float(ride.amount or 0)},
+            request=request,
+        )
     db.commit()
     db.refresh(ride)
     return ride

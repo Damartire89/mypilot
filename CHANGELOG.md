@@ -5,6 +5,18 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-18 — v1.8.3 (audit invoice_issued + robustesse UI + tests invite)
+
+### Audit
+- `[feature]` `rides.create_ride` : log `invoice_issued` (reference, amount) quand facture émise automatiquement — trace conformité URSSAF
+- `[fix]` SuperAdmin.jsx : `auditLogs?.items?.length ?? 0` (guard optional chain, évite crash si items undefined)
+
+### Tests
+- `[feature]` `test_members_invite.py` (5 tests : rôle valide, expires 7j, token URL-safe, schema InviteCreate OK/KO)
+- **110 tests pytest verts** (105 → 110)
+
+---
+
 ## 2026-04-18 — v1.8.2 (UI audit logs + stats + indexes)
 
 ### Superadmin
