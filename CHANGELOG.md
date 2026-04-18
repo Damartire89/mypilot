@@ -5,6 +5,13 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-18 — v1.8.7 (audit export CSV)
+
+### Audit
+- `[feature]` `rides.export_rides_csv` : log `export_csv` avec count, filtres (date_from/to, status, driver_id) — trace exports massifs RGPD
+
+---
+
 ## 2026-04-18 — v1.8.6 (rate limits endpoints sensibles + tests présence)
 
 ### Sécurité

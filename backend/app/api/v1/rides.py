@@ -91,12 +91,14 @@ def create_ride(body: RideCreate, request: Request, company: Company = Depends(g
 
 @router.get("/export/csv")
 def export_rides_csv(
+    request: Request,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     status: Optional[str] = None,
     driver_id: Optional[int] = None,
     company: Company = Depends(get_current_company),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     q = db.query(Ride, Driver.name.label("driver_name")).outerjoin(
         Driver, Ride.driver_id == Driver.id
@@ -112,6 +114,19 @@ def export_rides_csv(
         q = q.filter(func.date(Ride.ride_at) <= date_to)
 
     rows = q.order_by(Ride.ride_at.desc()).all()
+
+    log_action(
+        db, current_user, "export_csv", "ride",
+        details={
+            "count": len(rows),
+            "date_from": date_from.isoformat() if date_from else None,
+            "date_to": date_to.isoformat() if date_to else None,
+            "status": status,
+            "driver_id": driver_id,
+        },
+        request=request,
+    )
+    db.commit()
 
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")
