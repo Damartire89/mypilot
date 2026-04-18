@@ -27,6 +27,22 @@ const ACTIVITY_TYPES = [
 const PAYMENT_OPTIONS = ["CPAM", "Mutuelle", "Espèces", "Carte bancaire", "Virement", "Chèque", "Téléconsultation"];
 const ALERT_TYPES = ["CT véhicule", "Assurance", "Révision", "Permis de conduire", "Carte VTC", "Autorisation préfectorale"];
 
+// Validation IBAN (ISO 13616 checksum mod 97) — feedback visuel instantané
+function validateIban(iban) {
+  const s = String(iban || "").replace(/\s|-/g, "").toUpperCase();
+  if (!s) return { valid: true, empty: true };
+  if (s.length < 15 || s.length > 34) return { valid: false, reason: "Longueur incorrecte (15-34)" };
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(s)) return { valid: false, reason: "Format invalide" };
+  const rearranged = s.slice(4) + s.slice(0, 4);
+  const numeric = rearranged.replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
+  // BigInt car IBAN > 30 chiffres dépasse Number.MAX_SAFE_INTEGER
+  try {
+    return { valid: BigInt(numeric) % 97n === 1n, reason: "Checksum incorrect" };
+  } catch {
+    return { valid: false, reason: "Caractères invalides" };
+  }
+}
+
 function Section({ title, children }) {
   return (
     <div style={{ marginBottom: "20px" }}>
@@ -294,7 +310,25 @@ export default function Settings() {
             <input style={{ ...inputStyle, width: 180 }} type="email" value={billingEmail} onChange={e => setBillingEmail(e.target.value)} placeholder="factures@..." />
           </Row>
           <Row label="IBAN" sub="Pour les virements clients" border={false}>
-            <input style={{ ...inputStyle, width: 200 }} value={iban} onChange={e => setIban(e.target.value)} placeholder="FR76 XXXX..." />
+            {(() => {
+              const v = validateIban(iban);
+              const border = v.empty ? undefined : (v.valid ? "1px solid #16a34a" : "1px solid #dc2626");
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <input
+                    style={{ ...inputStyle, width: 240, border }}
+                    value={iban}
+                    onChange={e => setIban(e.target.value)}
+                    placeholder="FR76 XXXX XXXX XXXX..."
+                  />
+                  {!v.empty && (
+                    <span style={{ fontSize: 11, color: v.valid ? "#16a34a" : "#dc2626" }}>
+                      {v.valid ? "✓ IBAN valide" : `✗ ${v.reason}`}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </Row>
         </Section>
 

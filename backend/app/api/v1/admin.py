@@ -10,10 +10,11 @@ from app.models.driver import Driver
 from app.models.vehicle import Vehicle
 from app.models.settings import CompanySettings
 from app.models.invitation import Invitation
+from app.models.audit_log import AuditLog
 from app.schemas.invitation import MemberOut, MemberRoleUpdate, CompanyOut
 from app.auth import require_role, hash_password
 from app.audit import log_action
-from typing import List
+from typing import List, Optional
 
 router = APIRouter(prefix="/admin", tags=["superadmin"])
 
@@ -123,3 +124,68 @@ def update_user_role(
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.get("/stats/global")
+def global_stats(
+    _: User = Depends(require_role("superadmin")),
+    db: Session = Depends(get_db),
+):
+    """KPIs globaux pour dashboard superadmin (toutes entreprises confondues)."""
+    total_companies = db.query(Company).filter(Company.deleted_at.is_(None)).count()
+    deleted_companies = db.query(Company).filter(Company.deleted_at.isnot(None)).count()
+    total_users = db.query(User).count()
+    total_drivers = db.query(Driver).count()
+    total_vehicles = db.query(Vehicle).count()
+    total_rides = db.query(Ride).count()
+    total_audit_logs = db.query(AuditLog).count()
+    return {
+        "companies": {"active": total_companies, "deleted": deleted_companies},
+        "users": total_users,
+        "drivers": total_drivers,
+        "vehicles": total_vehicles,
+        "rides": total_rides,
+        "audit_logs": total_audit_logs,
+    }
+
+
+@router.get("/audit-logs")
+def list_audit_logs(
+    _: User = Depends(require_role("superadmin")),
+    db: Session = Depends(get_db),
+    company_id: Optional[int] = None,
+    action: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+):
+    """Liste paginée des logs d'audit (superadmin). Filtres optionnels : company_id, action.
+    Tri desc sur created_at. Limite 500 par requête."""
+    limit = max(1, min(500, limit))
+    offset = max(0, offset)
+    q = db.query(AuditLog)
+    if company_id is not None:
+        q = q.filter(AuditLog.company_id == company_id)
+    if action:
+        q = q.filter(AuditLog.action == action)
+    total = q.count()
+    rows = q.order_by(AuditLog.created_at.desc()).limit(limit).offset(offset).all()
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "items": [
+            {
+                "id": r.id,
+                "company_id": r.company_id,
+                "user_id": r.user_id,
+                "user_email": r.user_email,
+                "action": r.action,
+                "entity_type": r.entity_type,
+                "entity_id": r.entity_id,
+                "details": r.details,
+                "ip_address": r.ip_address,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ],
+    }
