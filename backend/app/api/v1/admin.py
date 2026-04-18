@@ -24,12 +24,21 @@ def list_all_companies(
     _: User = Depends(require_role("superadmin")),
     db: Session = Depends(get_db),
 ):
+    from sqlalchemy import func
     companies = db.query(Company).filter(Company.deleted_at.is_(None)).order_by(Company.created_at.desc()).all()
+    if not companies:
+        return []
+    # Une seule requête pour tous les counts (évite N+1)
+    counts = dict(
+        db.query(User.company_id, func.count(User.id))
+        .filter(User.company_id.in_([c.id for c in companies]))
+        .group_by(User.company_id)
+        .all()
+    )
     result = []
     for c in companies:
-        member_count = db.query(User).filter(User.company_id == c.id).count()
         out = CompanyOut.model_validate(c)
-        out.member_count = member_count
+        out.member_count = counts.get(c.id, 0)
         result.append(out)
     return result
 
