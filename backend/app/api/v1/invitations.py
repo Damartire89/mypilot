@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.invitation import Invitation
@@ -8,6 +8,7 @@ from app.models.company import Company
 from app.schemas.invitation import InvitationAccept
 from app.schemas.auth import TokenResponse
 from app.auth import hash_password, create_access_token
+from app.limiter import limiter
 
 router = APIRouter(prefix="/invitations", tags=["invitations"])
 
@@ -35,7 +36,8 @@ def _get_valid_invitation(token: str, db: Session) -> Invitation:
 
 
 @router.get("/{token}")
-def check_invitation(token: str, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def check_invitation(token: str, request: Request, db: Session = Depends(get_db)):
     invitation = _get_valid_invitation(token, db)
     company = db.get(Company, invitation.company_id)
     return {
@@ -47,7 +49,8 @@ def check_invitation(token: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{token}/accept", response_model=TokenResponse)
-def accept_invitation(token: str, body: InvitationAccept, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def accept_invitation(token: str, body: InvitationAccept, request: Request, db: Session = Depends(get_db)):
     invitation = _get_valid_invitation(token, db)
 
     if db.query(User).filter(User.email == invitation.email).first():

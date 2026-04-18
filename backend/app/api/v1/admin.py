@@ -14,6 +14,7 @@ from app.models.audit_log import AuditLog
 from app.schemas.invitation import MemberOut, MemberRoleUpdate, CompanyOut
 from app.auth import require_role, hash_password
 from app.audit import log_action
+from app.limiter import limiter
 from typing import List, Optional
 
 router = APIRouter(prefix="/admin", tags=["superadmin"])
@@ -84,6 +85,7 @@ def delete_company(
 
 
 @router.post("/users/{user_id}/reset-password")
+@limiter.limit("10/minute")
 def reset_user_password(
     user_id: int,
     request: Request,

@@ -5,6 +5,20 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-18 — v1.8.6 (rate limits endpoints sensibles + tests présence)
+
+### Sécurité
+- `[feature]` `invitations.check_invitation` : rate limit 20/min (anti-enumération tokens)
+- `[feature]` `invitations.accept_invitation` : rate limit 5/min (anti brute-force)
+- `[feature]` `admin.reset_user_password` : rate limit 10/min (anti-abus admin compromis)
+- `[feature]` `auth.change_password` : rate limit 5/min (anti brute-force mot de passe actuel)
+
+### Tests
+- `[feature]` `test_rate_limits.py` (8 tests : présence decorateurs, module limiter, formats slowapi)
+- **131 tests pytest verts** (123 → 131)
+
+---
+
 ## 2026-04-18 — v1.8.5 (audit settings + staleTime admin + 13 tests)
 
 ### Audit

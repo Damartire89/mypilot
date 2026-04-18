@@ -59,7 +59,9 @@ def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/change-password", status_code=204)
+@limiter.limit("5/minute")
 def change_password(
+    request: Request,
     body: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
