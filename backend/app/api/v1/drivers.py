@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 from app.database import get_db
@@ -8,6 +8,8 @@ from app.models.company import Company
 from app.models.settings import CompanySettings
 from app.schemas.driver import DriverCreate, DriverUpdate, DriverOut
 from app.auth import get_current_company, require_write_access
+from app.audit import log_action
+from app.utils.alerts import alert_for_date
 from app.models.user import User
 from typing import List, Optional
 from datetime import datetime, timezone, date
@@ -24,18 +26,9 @@ def _get_alert_days(company_id: int, db: Session) -> int:
 
 def _driver_alerts(driver: Driver, alert_days: int = 30) -> dict:
     today = date.today()
-    def _alert(expiry):
-        if not expiry:
-            return None
-        delta = (expiry - today).days
-        if delta < 0:
-            return "expired"
-        if delta <= alert_days:
-            return f"expires_in_{delta}"
-        return None
     return {
-        "carte_pro_alert": _alert(driver.carte_pro_expiry),
-        "carte_vtc_alert": _alert(driver.carte_vtc_expiry),
+        "carte_pro_alert": alert_for_date(driver.carte_pro_expiry, today, alert_days),
+        "carte_vtc_alert": alert_for_date(driver.carte_vtc_expiry, today, alert_days),
     }
 
 
@@ -86,12 +79,17 @@ def update_driver(driver_id: int, body: DriverUpdate, company: Company = Depends
 
 
 @router.delete("/{driver_id}", status_code=204)
-def delete_driver(driver_id: int, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
+def delete_driver(driver_id: int, request: Request, company: Company = Depends(get_current_company), db: Session = Depends(get_db), current_user: User = Depends(require_write_access)):
     driver = db.query(Driver).filter(Driver.id == driver_id, Driver.company_id == company.id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Chauffeur introuvable")
-    # Détacher les courses du chauffeur avant suppression
-    db.query(Ride).filter(Ride.driver_id == driver_id, Ride.company_id == company.id).update({"driver_id": None})
+    rides_detached = db.query(Ride).filter(Ride.driver_id == driver_id, Ride.company_id == company.id).update({"driver_id": None})
+    log_action(
+        db, current_user, "delete", "driver",
+        entity_id=driver.id,
+        details={"name": driver.name, "license_number": driver.license_number, "rides_detached": rides_detached},
+        request=request,
+    )
     db.delete(driver)
     db.commit()
 

@@ -1,5 +1,6 @@
 import secrets
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime, timezone
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
@@ -11,6 +12,7 @@ from app.models.settings import CompanySettings
 from app.models.invitation import Invitation
 from app.schemas.invitation import MemberOut, MemberRoleUpdate, CompanyOut
 from app.auth import require_role, hash_password
+from app.audit import log_action
 from typing import List
 
 router = APIRouter(prefix="/admin", tags=["superadmin"])
@@ -21,7 +23,7 @@ def list_all_companies(
     _: User = Depends(require_role("superadmin")),
     db: Session = Depends(get_db),
 ):
-    companies = db.query(Company).order_by(Company.created_at.desc()).all()
+    companies = db.query(Company).filter(Company.deleted_at.is_(None)).order_by(Company.created_at.desc()).all()
     result = []
     for c in companies:
         member_count = db.query(User).filter(User.company_id == c.id).count()
@@ -46,36 +48,36 @@ def list_company_users(
 @router.delete("/companies/{company_id}", status_code=204)
 def delete_company(
     company_id: int,
-    _: User = Depends(require_role("superadmin")),
+    request: Request,
+    current_user: User = Depends(require_role("superadmin")),
     db: Session = Depends(get_db),
 ):
-    company = db.get(Company, company_id)
+    company = db.query(Company).filter(Company.id == company_id, Company.deleted_at.is_(None)).first()
     if not company:
         raise HTTPException(status_code=404, detail="Entreprise introuvable")
-    # Refus de supprimer une entreprise qui contient un superadmin
     has_superadmin = db.query(User).filter(
         User.company_id == company_id, User.role == "superadmin"
     ).first()
     if has_superadmin:
         raise HTTPException(status_code=400, detail="Impossible de supprimer une entreprise contenant un superadmin")
-    try:
-        db.query(Ride).filter(Ride.company_id == company_id).delete()
-        db.query(Driver).filter(Driver.company_id == company_id).delete()
-        db.query(Vehicle).filter(Vehicle.company_id == company_id).delete()
-        db.query(Invitation).filter(Invitation.company_id == company_id).delete()
-        db.query(CompanySettings).filter(CompanySettings.company_id == company_id).delete()
-        db.query(User).filter(User.company_id == company_id).delete()
-        db.delete(company)
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Erreur lors de la suppression de l'entreprise")
+
+    # Soft-delete : marquer deleted_at au lieu de DROP. Les données restent pour audit/recovery.
+    # La vraie purge sera faite par un cron séparé après un délai (ex. 30 jours).
+    log_action(
+        db, current_user, "soft_delete", "company",
+        entity_id=company.id,
+        details={"name": company.name, "email": company.email, "siret": company.siret},
+        request=request,
+    )
+    company.deleted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    db.commit()
 
 
 @router.post("/users/{user_id}/reset-password")
 def reset_user_password(
     user_id: int,
-    _: User = Depends(require_role("superadmin")),
+    request: Request,
+    current_user: User = Depends(require_role("superadmin")),
     db: Session = Depends(get_db),
 ):
     user = db.get(User, user_id)
@@ -85,6 +87,12 @@ def reset_user_password(
         raise HTTPException(status_code=400, detail="Impossible de réinitialiser un compte superadmin")
     temp_password = secrets.token_urlsafe(10)
     user.hashed_password = hash_password(temp_password)
+    log_action(
+        db, current_user, "reset_password", "user",
+        entity_id=user.id,
+        details={"target_email": user.email},
+        request=request,
+    )
     db.commit()
     return {"temporary_password": temp_password}
 
@@ -93,6 +101,7 @@ def reset_user_password(
 def update_user_role(
     user_id: int,
     body: MemberRoleUpdate,
+    request: Request,
     current_user: User = Depends(require_role("superadmin")),
     db: Session = Depends(get_db),
 ):
@@ -103,7 +112,14 @@ def update_user_role(
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="Impossible de modifier son propre rôle")
+    old_role = user.role
     user.role = body.role
+    log_action(
+        db, current_user, "change_role", "user",
+        entity_id=user.id,
+        details={"target_email": user.email, "from": old_role, "to": body.role},
+        request=request,
+    )
     db.commit()
     db.refresh(user)
     return user

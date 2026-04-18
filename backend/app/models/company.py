@@ -13,3 +13,4 @@ class Company(Base):
     activity_type = Column(String(20), default="taxi")  # taxi | vtc | ambulance
     address = Column(String(300), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+    deleted_at = Column(DateTime, nullable=True)

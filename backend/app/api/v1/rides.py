@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
@@ -7,10 +7,11 @@ from app.models.ride import Ride
 from app.models.driver import Driver
 from app.models.company import Company
 from app.models.settings import CompanySettings
-from app.schemas.ride import RideCreate, RideUpdate, RideOut
-from app.auth import get_current_company, require_write_access
+from app.schemas.ride import RideCreate, RideUpdate, RideOut, PAYMENT_TYPES, RIDE_STATUSES
+from app.auth import get_current_company, get_current_user, require_write_access
 from app.models.user import User
 from app.pdf import generate_invoice_pdf
+from app.audit import log_action
 from typing import List, Optional
 from datetime import date, datetime, timezone, timedelta
 import csv
@@ -35,8 +36,12 @@ def list_rides(
 ):
     q = db.query(Ride).filter(Ride.company_id == company.id)
     if status:
+        if status not in RIDE_STATUSES:
+            raise HTTPException(status_code=400, detail="Statut invalide")
         q = q.filter(Ride.status == status)
     if payment_type:
+        if payment_type not in PAYMENT_TYPES:
+            raise HTTPException(status_code=400, detail="Type de paiement invalide")
         q = q.filter(Ride.payment_type == payment_type)
     if driver_id:
         q = q.filter(Ride.driver_id == driver_id)
@@ -50,16 +55,21 @@ def list_rides(
 @router.post("", response_model=RideOut, status_code=201)
 def create_ride(body: RideCreate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
     data = body.model_dump()
-    # Génération automatique de la référence si non fournie
     if not data.get("reference"):
-        settings = db.query(CompanySettings).filter_by(company_id=company.id).first()
+        settings = (
+            db.query(CompanySettings)
+            .filter_by(company_id=company.id)
+            .with_for_update()
+            .first()
+        )
         if settings:
+            from app.utils.invoice import format_invoice_reference
             year = datetime.now(timezone.utc).year
-            prefix = settings.invoice_prefix or "C"
             num = settings.invoice_next_number or 1
-            data["reference"] = f"{prefix}-{year}-{num:04d}"
+            data["reference"] = format_invoice_reference(settings.invoice_prefix, year, num)
             settings.invoice_next_number = num + 1
             db.add(settings)
+            data["issued_at"] = datetime.now(timezone.utc)
     ride = Ride(**data, company_id=company.id)
     db.add(ride)
     db.commit()
@@ -138,7 +148,13 @@ def export_ride_pdf(
     ride = db.query(Ride).filter(Ride.id == ride_id, Ride.company_id == company.id).first()
     if not ride:
         raise HTTPException(status_code=404, detail="Course introuvable")
-    driver = db.query(Driver).filter(Driver.id == ride.driver_id).first() if ride.driver_id else None
+    driver = None
+    if ride.driver_id:
+        driver = db.query(Driver).filter(Driver.id == ride.driver_id, Driver.company_id == company.id).first()
+        if not driver:
+            # Chauffeur supprimé mais course conserve la référence — on détache proprement
+            ride.driver_id = None
+            db.commit()
     settings = db.query(CompanySettings).filter_by(company_id=company.id).first()
     pdf_bytes = generate_invoice_pdf(ride, company, driver, settings)
     ref = ride.reference or f"course-{ride.id}"
@@ -288,11 +304,37 @@ def get_ride(ride_id: int, company: Company = Depends(get_current_company), db: 
 
 
 @router.patch("/{ride_id}", response_model=RideOut)
-def update_ride(ride_id: int, body: RideUpdate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
+def update_ride(ride_id: int, body: RideUpdate, request: Request, company: Company = Depends(get_current_company), db: Session = Depends(get_db), current_user: User = Depends(require_write_access)):
     ride = db.query(Ride).filter(Ride.id == ride_id, Ride.company_id == company.id).first()
     if not ride:
         raise HTTPException(status_code=404, detail="Course introuvable")
-    for field, value in body.model_dump(exclude_none=True).items():
+
+    updates = body.model_dump(exclude_none=True)
+    was_paid = ride.status == "paid"
+
+    if was_paid and current_user.role not in ("superadmin", "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Course déjà payée — seul un admin peut la modifier",
+        )
+    if was_paid and current_user.role in ("superadmin", "admin"):
+        forbidden_fields = {"amount", "reference", "client_name", "payment_type"}
+        touched = forbidden_fields & set(updates.keys())
+        if touched and updates.get("status") != "pending":
+            raise HTTPException(
+                status_code=403,
+                detail=f"Course payée : impossible de modifier {', '.join(sorted(touched))} sans repasser d'abord en 'En attente'",
+            )
+
+    if was_paid:
+        log_action(
+            db, current_user, "update_paid_ride", "ride",
+            entity_id=ride.id,
+            details={"fields": list(updates.keys()), "reference": ride.reference},
+            request=request,
+        )
+
+    for field, value in updates.items():
         setattr(ride, field, value)
     db.commit()
     db.refresh(ride)
@@ -300,9 +342,20 @@ def update_ride(ride_id: int, body: RideUpdate, company: Company = Depends(get_c
 
 
 @router.delete("/{ride_id}", status_code=204)
-def delete_ride(ride_id: int, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
+def delete_ride(ride_id: int, request: Request, company: Company = Depends(get_current_company), db: Session = Depends(get_db), current_user: User = Depends(require_write_access)):
     ride = db.query(Ride).filter(Ride.id == ride_id, Ride.company_id == company.id).first()
     if not ride:
         raise HTTPException(status_code=404, detail="Course introuvable")
+    log_action(
+        db, current_user, "delete", "ride",
+        entity_id=ride.id,
+        details={
+            "reference": ride.reference,
+            "amount": float(ride.amount) if ride.amount else None,
+            "status": ride.status,
+            "client": ride.client_name,
+        },
+        request=request,
+    )
     db.delete(ride)
     db.commit()

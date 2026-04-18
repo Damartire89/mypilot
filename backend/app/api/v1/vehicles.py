@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.vehicle import Vehicle
@@ -6,6 +6,8 @@ from app.models.company import Company
 from app.models.settings import CompanySettings
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleOut
 from app.auth import get_current_company, require_write_access
+from app.audit import log_action
+from app.utils.alerts import alert_for_date
 from app.models.user import User
 from typing import List
 from datetime import date
@@ -20,24 +22,13 @@ def _get_alert_days(company_id: int, db: Session) -> int:
     return 30
 
 
-def _alert_for_date(expiry_date, today, alert_days: int = 30) -> str | None:
-    if not expiry_date:
-        return None
-    delta = (expiry_date - today).days
-    if delta < 0:
-        return "expired"
-    if delta <= alert_days:
-        return f"expires_in_{delta}"
-    return None
-
-
 def _compute_alerts(vehicle: Vehicle, alert_days: int = 30) -> dict:
     today = date.today()
     return {
-        "ct_alert": _alert_for_date(vehicle.ct_expiry, today, alert_days),
-        "insurance_alert": _alert_for_date(vehicle.insurance_expiry, today, alert_days),
-        "ads_alert": _alert_for_date(vehicle.ads_expiry, today, alert_days),
-        "taximetre_alert": _alert_for_date(vehicle.taximetre_expiry, today, alert_days),
+        "ct_alert": alert_for_date(vehicle.ct_expiry, today, alert_days),
+        "insurance_alert": alert_for_date(vehicle.insurance_expiry, today, alert_days),
+        "ads_alert": alert_for_date(vehicle.ads_expiry, today, alert_days),
+        "taximetre_alert": alert_for_date(vehicle.taximetre_expiry, today, alert_days),
     }
 
 
@@ -93,9 +84,15 @@ def update_vehicle(vehicle_id: int, body: VehicleUpdate, company: Company = Depe
 
 
 @router.delete("/{vehicle_id}", status_code=204)
-def delete_vehicle(vehicle_id: int, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_write_access)):
+def delete_vehicle(vehicle_id: int, request: Request, company: Company = Depends(get_current_company), db: Session = Depends(get_db), current_user: User = Depends(require_write_access)):
     vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id, Vehicle.company_id == company.id).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail="Véhicule introuvable")
+    log_action(
+        db, current_user, "delete", "vehicle",
+        entity_id=vehicle.id,
+        details={"plate": vehicle.plate, "brand": vehicle.brand, "model": vehicle.model},
+        request=request,
+    )
     db.delete(vehicle)
     db.commit()

@@ -42,6 +42,8 @@ export default function NewRide() {
 
   const [form, setForm] = useState({
     client_name: "",
+    client_address: "",
+    client_siret: "",
     origin: "",
     destination: "",
     amount: "",
@@ -70,10 +72,23 @@ export default function NewRide() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.amount || isNaN(form.amount)) return setError("Montant invalide");
-    if (parseFloat(form.amount) === 0 && !window.confirm("Le montant est 0€. Confirmer l'enregistrement ?")) return;
+    setError("");
+
+    const required = [
+      ["client_name", "Nom du client"],
+      ["origin", "Adresse de départ"],
+      ["destination", "Adresse d'arrivée"],
+    ];
+    const missing = required.filter(([k]) => !(form[k] || "").trim()).map(([, label]) => label);
+    if (missing.length) return setError(`Champs requis : ${missing.join(", ")}`);
+
+    const amount = parseFloat(form.amount);
+    if (!form.amount || isNaN(amount)) return setError("Montant invalide");
+    if (amount < 0) return setError("Le montant ne peut pas être négatif");
+    if (amount > 99999) return setError("Montant trop élevé (max 99 999 €)");
+    if (amount === 0 && !window.confirm("Le montant est 0€. Confirmer l'enregistrement ?")) return;
     const maxAlert = settings?.max_ride_amount_alert ? parseFloat(settings.max_ride_amount_alert) : null;
-    if (maxAlert && parseFloat(form.amount) > maxAlert && !window.confirm(`Le montant (${form.amount}€) dépasse votre seuil d'alerte (${maxAlert}€). Continuer ?`)) return;
+    if (maxAlert && amount > maxAlert && !window.confirm(`Le montant (${form.amount}€) dépasse votre seuil d'alerte (${maxAlert}€). Continuer ?`)) return;
     setLoading(true);
     setError("");
     try {
@@ -82,6 +97,8 @@ export default function NewRide() {
         amount: parseFloat(form.amount),
         driver_id: form.driver_id ? parseInt(form.driver_id) : null,
         ride_at: form.ride_at || null,
+        client_address: form.client_address || null,
+        client_siret: form.client_siret || null,
         bon_transport: form.bon_transport || null,
         prescripteur: form.prescripteur || null,
         notes: form.notes || null,
@@ -134,6 +151,27 @@ export default function NewRide() {
                   placeholder="ex. Mme Dupont"
                   value={form.client_name}
                   onChange={e => set("client_name", e.target.value)}
+                  onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                  onBlur={e => e.target.style.borderColor = "var(--border)"}
+                />
+              </Field>
+              <Field label="Adresse client (optionnel, pour facture pro)">
+                <textarea
+                  style={{ ...inputStyle, minHeight: "48px", resize: "vertical" }}
+                  placeholder="12 rue de la Paix, 75002 Paris"
+                  value={form.client_address}
+                  onChange={e => set("client_address", e.target.value)}
+                  onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                  onBlur={e => e.target.style.borderColor = "var(--border)"}
+                />
+              </Field>
+              <Field label="SIRET client (si entreprise)">
+                <input
+                  style={inputStyle}
+                  placeholder="14 chiffres"
+                  maxLength={17}
+                  value={form.client_siret}
+                  onChange={e => set("client_siret", e.target.value)}
                   onFocus={e => e.target.style.borderColor = "var(--brand)"}
                   onBlur={e => e.target.style.borderColor = "var(--border)"}
                 />

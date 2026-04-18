@@ -65,6 +65,8 @@ export default function EditRide() {
     if (!ride) return;
     setForm({
       client_name: ride.client_name || "",
+      client_address: ride.client_address || "",
+      client_siret: ride.client_siret || "",
       origin: ride.origin || "",
       destination: ride.destination || "",
       amount: String(ride.amount),
@@ -118,6 +120,8 @@ export default function EditRide() {
       amount: parseFloat(form.amount),
       driver_id: form.driver_id ? parseInt(form.driver_id) : null,
       ride_at: form.ride_at || null,
+      client_address: form.client_address || null,
+      client_siret: form.client_siret || null,
       bon_transport: form.bon_transport || null,
       prescripteur: form.prescripteur || null,
       notes: form.notes || null,
@@ -216,6 +220,27 @@ export default function EditRide() {
                   placeholder="ex. Mme Dupont"
                   value={form.client_name}
                   onChange={e => set("client_name", e.target.value)}
+                  onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                  onBlur={e => e.target.style.borderColor = "var(--border)"}
+                />
+              </Field>
+              <Field label="Adresse client (optionnel, pour facture pro)">
+                <textarea
+                  style={{ ...inputStyle, minHeight: "48px", resize: "vertical" }}
+                  placeholder="12 rue de la Paix, 75002 Paris"
+                  value={form.client_address}
+                  onChange={e => set("client_address", e.target.value)}
+                  onFocus={e => e.target.style.borderColor = "var(--brand)"}
+                  onBlur={e => e.target.style.borderColor = "var(--border)"}
+                />
+              </Field>
+              <Field label="SIRET client (si entreprise)">
+                <input
+                  style={inputStyle}
+                  placeholder="14 chiffres"
+                  maxLength={17}
+                  value={form.client_siret}
+                  onChange={e => set("client_siret", e.target.value)}
                   onFocus={e => e.target.style.borderColor = "var(--brand)"}
                   onBlur={e => e.target.style.borderColor = "var(--border)"}
                 />

@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -9,6 +9,19 @@ from app.config import settings as app_settings
 app = FastAPI(title="myPilot API", version="0.2.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    if app_settings.environment == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,3 +45,18 @@ app.include_router(gasoil.router, prefix="/api/v1")
 @app.get("/health")
 def health():
     return {"status": "ok", "app": "myPilot"}
+
+
+@app.get("/health/db")
+def health_db():
+    """Vérifie que la BDD répond. Utile pour monitoring + keep-alive."""
+    from app.database import SessionLocal
+    from sqlalchemy import text
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "ok", "db": "reachable"}
+    except Exception as e:
+        return {"status": "degraded", "db": "unreachable", "error": str(e)[:100]}
+    finally:
+        db.close()

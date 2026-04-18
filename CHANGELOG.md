@@ -5,6 +5,72 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-18 — v1.8 (Audit Opus 4.7 — Sprint 1 suite & fin)
+
+### Sécurité & audit
+- `[feature]` Table `audit_logs` + migration `c3d4e5f6a7b8` : log actions critiques (user, action, entity, IP, details JSON)
+- `[feature]` Helper `app/audit.py::log_action()` — extraction IP via x-forwarded-for, sérialisation JSON
+- `[feature]` Logs sur : soft_delete company, reset_password, change_role (admin), delete driver/vehicle, invite/role/delete membre
+- `[fix]` Soft-delete Company (admin.py) : `deleted_at` au lieu de CASCADE DELETE (évite data loss)
+- `[feature]` Validation IBAN (checksum mod 97 ISO 13616) dans settings.py — rejette IBAN malformé en 400
+- `[feature]` Security headers middleware (main.py) : X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, HSTS en prod
+- `[feature]` Invitation : re-validation rôle à l'acceptation + blocage si entreprise soft-deleted (410)
+
+### Conformité facture (URSSAF)
+- `[feature]` Ride : champs `client_address`, `client_siret` (migration `d5e6f7a8b9c0`) — SIRET normalisé 14 chiffres
+- `[feature]` Ride : champ `issued_at` (migration `f6a7b8c9d0e1`) — figé à la création de la facture
+- `[feature]` Settings.update : **freeze numéro facture** — refuse modif `invoice_prefix`/`invoice_next_number` en 409 si au moins 1 facture émise
+- `[feature]` PDF facture : bloc Facturé à étendu avec adresse multiligne + SIRET client
+- `[feature]` Frontend Settings : bannière jaune "Numérotation figée" + inputs désactivés quand freeze actif
+
+### Bugs & edge cases
+- `[fix]` rides.py : driver supprimé dans PDF — détache proprement si orphelin au lieu d'afficher silencieusement "Non assigné"
+- `[fix]` gasoil.py : cache thread-safe (`threading.Lock`, fonction `_cache_is_fresh` extraite)
+- `[fix]` Factorisation `_alert_for_date` dupliqué drivers/vehicles → `app/utils/alerts.py`
+- `[fix]` Helper `format_invoice_reference` extrait → `app/utils/invoice.py` (PREFIX-YEAR-NNNN padded 4)
+
+### UX & monitoring
+- `[feature]` Search box Drivers (name/phone/license) + Vehicles (plate/brand/model) — visible à partir de 6 items
+- `[feature]` NewRide + EditRide : inputs client_address (textarea) + client_siret + hydratation
+- `[feature]` CompanySettings : option `show_gasoil_widget` (toggle Settings) + migration `e5f6a7b8c9d0`
+- `[feature]` Login : ping `/health` dès ouverture de la page (anti cold-start Render)
+- `[feature]` Endpoint `/health/db` (SELECT 1) pour monitoring
+
+### Tests
+- `[feature]` **97 tests pytest** (0% → couverture solide) : alerts, audit, audit_log_model, config, driver/vehicle/ride schemas, IBAN (+endpoint), invitation, invoice helpers, invoice_freeze, PDF, gasoil cache
+
+### Notes
+- **6 migrations appliquées sur BDD locale** (a1b2c3d4e5f6 → f6a7b8c9d0e1)
+- Sprint 1 quasi-complet. Restent (Sprint 2+) : JWT HttpOnly cookies, CSRF, backups DB auto, mot de passe oublié, envoi email facture Resend, export FEC
+- Build frontend 497 kB (gzip 133 kB)
+
+---
+
+## 2026-04-17 — v1.7 (Audit Opus 4.7 — Sprint 1 Fiabilité)
+
+### Fix critiques
+- `[fix]` rides.py `create_ride` : race condition sur `invoice_next_number` résolue (SELECT FOR UPDATE via `with_for_update()`) — élimine les doublons de référence facture
+- `[fix]` rides.py `update_ride` : verrou comptable — une course `status=paid` ne peut plus être modifiée sauf par admin/superadmin, qui doit d'abord la repasser en `pending` pour toucher amount/reference/client_name/payment_type
+- `[fix]` auth.py `login` : rate limit durci de `20/min;100/h` à `5/min;30/h` — brute-force inexploitable
+- `[fix]` config.py : validation stricte `SECRET_KEY` en production (32+ chars, pas de "dev"/"change") + validation `ALLOWED_ORIGINS` (rejette localhost en prod, refuse vide)
+- `[fix]` schemas/ride.py : enums stricts (`PAYMENT_TYPES`, `RIDE_STATUSES`) + validation montant (≥0, ≤99 999 €) — plus de valeurs fantaisistes en DB
+- `[fix]` rides.py `list_rides` : filtres `status` et `payment_type` validés contre les enums (400 sinon)
+- `[fix]` NewRide.jsx : validation côté client des champs requis (client, départ, arrivée) + bornes montant (0-99 999 €)
+
+### Conformité facture (mentions légales FR)
+- `[feature]` pdf.py : libellé "Facture n° X" explicite (mention obligatoire)
+- `[feature]` pdf.py : date limite de paiement (émission + 30 jours)
+- `[feature]` pdf.py : bloc "Facturé à" (identité destinataire + n° bon de transport si CPAM/mutuelle)
+- `[feature]` pdf.py : mention "TVA non applicable, art. 293 B du CGI" si `tva_rate=0`
+- `[feature]` pdf.py : footer mention retard de paiement (indemnité 40 €, art. L441-10 C. com.)
+
+### Notes
+- Aucune migration DB requise pour cette salve — changements code-only
+- SPRINT 1 restants : JWT cookies HttpOnly (risque prod, reporté), CSRF protection, backups auto
+- Backend à redéployer sur Render après merge (changement config)
+
+---
+
 ## 2026-04-16 — v1.5 (Audit + corrections + index DB)
 
 ### Fix

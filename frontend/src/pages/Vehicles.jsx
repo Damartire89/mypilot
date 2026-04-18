@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Layout from "../components/Layout";
 import { SkeletonList } from "../components/Skeleton";
@@ -131,8 +131,19 @@ export default function Vehicles() {
   const toast = useToast();
   const [modal, setModal] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [search, setSearch] = useState("");
 
   const { data: vehicles = [], isLoading } = useQuery({ queryKey: ["vehicles"], queryFn: getVehicles });
+
+  const filteredVehicles = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return vehicles;
+    return vehicles.filter(v =>
+      (v.plate || "").toLowerCase().includes(q) ||
+      (v.brand || "").toLowerCase().includes(q) ||
+      (v.model || "").toLowerCase().includes(q)
+    );
+  }, [vehicles, search]);
 
   const addMutation = useMutation({
     mutationFn: createVehicle,
@@ -232,11 +243,26 @@ export default function Vehicles() {
 
         {vehicles.length > 0 && (
           <>
+            {vehicles.length >= 6 && (
+              <input
+                type="search"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Rechercher un véhicule (plaque, marque, modèle)…"
+                style={{
+                  width: "100%", boxSizing: "border-box",
+                  border: "1px solid var(--border)", borderRadius: "9px",
+                  padding: "9px 12px", fontSize: "13px",
+                  background: "var(--bg)", color: "var(--text)",
+                  marginBottom: "10px",
+                }}
+              />
+            )}
             <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>
-              Véhicules ({vehicles.length})
+              Véhicules ({filteredVehicles.length}{search ? ` / ${vehicles.length}` : ""})
             </p>
             <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
-              {vehicles.map((vehicle, i) => {
+              {filteredVehicles.map((vehicle, i) => {
                 const s = STATUS[vehicle.status] || STATUS.available;
                 const ctAlert  = alertLabel(vehicle.ct_alert);
                 const insAlert = alertLabel(vehicle.insurance_alert);

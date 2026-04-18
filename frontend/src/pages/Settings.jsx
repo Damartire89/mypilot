@@ -158,6 +158,7 @@ export default function Settings() {
   const [invoicePrefix, setInvoicePrefix] = useState("FAC");
   const [invoiceNextNumber, setInvoiceNextNumber] = useState("001");
   const [invoiceFooter, setInvoiceFooter] = useState("");
+  const [invoiceNumberingFrozen, setInvoiceNumberingFrozen] = useState(false);
   const [enabledPayments, setEnabledPayments] = useState(["CPAM", "Espèces", "Carte bancaire"]);
 
   // Alertes
@@ -166,6 +167,7 @@ export default function Settings() {
 
   // Affichage
   const [showCA, setShowCA] = useState(true);
+  const [showGasoilWidget, setShowGasoilWidget] = useState(true);
   const [currency, setCurrency] = useState("EUR");
   const [dateFormat, setDateFormat] = useState("dd/mm/yyyy");
   const [weekStart, setWeekStart] = useState("monday");
@@ -199,11 +201,13 @@ export default function Settings() {
     if (remote.tva_rate) setTvaRate(remote.tva_rate);
     if (remote.invoice_prefix) setInvoicePrefix(remote.invoice_prefix);
     if (remote.invoice_next_number) setInvoiceNextNumber(String(remote.invoice_next_number));
+    setInvoiceNumberingFrozen(!!remote.invoice_numbering_frozen);
     if (remote.invoice_footer !== undefined) setInvoiceFooter(remote.invoice_footer);
     if (remote.enabled_payments?.length) setEnabledPayments(remote.enabled_payments);
     if (remote.enabled_alerts?.length) setEnabledAlerts(remote.enabled_alerts);
     if (remote.alert_days_before) setAlertDaysBefore(String(remote.alert_days_before));
     setShowCA(!remote.hide_ca);
+    setShowGasoilWidget(remote.show_gasoil_widget !== false);
     if (remote.currency) setCurrency(remote.currency);
     if (remote.date_format) setDateFormat(remote.date_format);
     if (remote.week_start) setWeekStart(remote.week_start);
@@ -222,18 +226,17 @@ export default function Settings() {
   }, [remote]);
 
   const handleSave = () => {
-    mutation.mutate({
+    const payload = {
       company_name: companyName,
       activity_type: activityType,
       siret, phone, address,
-      invoice_prefix: invoicePrefix,
-      invoice_next_number: parseInt(invoiceNextNumber) || 1,
       tva_rate: tvaRate,
       invoice_footer: invoiceFooter,
       enabled_payments: enabledPayments,
       enabled_alerts: enabledAlerts,
       alert_days_before: parseInt(alertDaysBefore) || 30,
       hide_ca: !showCA,
+      show_gasoil_widget: showGasoilWidget,
       currency, date_format: dateFormat, week_start: weekStart,
       notif_new_ride: notifNewRide,
       notif_unpaid: notifUnpaid,
@@ -247,7 +250,13 @@ export default function Settings() {
       zone_activite: zoneActivite,
       numero_licence: numeroLicence,
       iban,
-    });
+    };
+    // Ne pas envoyer les champs figés pour éviter un 409 backend (UX)
+    if (!invoiceNumberingFrozen) {
+      payload.invoice_prefix = invoicePrefix;
+      payload.invoice_next_number = parseInt(invoiceNextNumber) || 1;
+    }
+    mutation.mutate(payload);
   };
 
   const toggleArr = (arr, setArr, val) => {
@@ -310,11 +319,30 @@ export default function Settings() {
 
         {/* Facturation */}
         <Section title="Facturation">
+          {invoiceNumberingFrozen && (
+            <div style={{ padding: "10px 12px", background: "#fef3c7", color: "#92400e", borderRadius: 8, fontSize: 13, marginBottom: 8, border: "1px solid #fde68a" }}>
+              🔒 Numérotation figée : au moins une facture a déjà été émise. Pour respecter les obligations comptables (URSSAF), le préfixe et le prochain numéro ne peuvent plus être modifiés.
+            </div>
+          )}
           <Row label="Préfixe facture" sub="ex. FAC, TXM, 2026-" border>
-            <input style={{ ...inputStyleBrand, width: 80 }} value={invoicePrefix} onChange={e => setInvoicePrefix(e.target.value)} placeholder="FAC" />
+            <input
+              style={{ ...inputStyleBrand, width: 80, opacity: invoiceNumberingFrozen ? 0.5 : 1, cursor: invoiceNumberingFrozen ? "not-allowed" : "text" }}
+              value={invoicePrefix}
+              onChange={e => setInvoicePrefix(e.target.value)}
+              placeholder="FAC"
+              disabled={invoiceNumberingFrozen}
+              title={invoiceNumberingFrozen ? "Numérotation figée après émission de factures" : ""}
+            />
           </Row>
           <Row label="Prochain numéro" border>
-            <input style={{ ...inputStyle, width: 80 }} value={invoiceNextNumber} onChange={e => setInvoiceNextNumber(e.target.value)} placeholder="001" />
+            <input
+              style={{ ...inputStyle, width: 80, opacity: invoiceNumberingFrozen ? 0.5 : 1, cursor: invoiceNumberingFrozen ? "not-allowed" : "text" }}
+              value={invoiceNextNumber}
+              onChange={e => setInvoiceNextNumber(e.target.value)}
+              placeholder="001"
+              disabled={invoiceNumberingFrozen}
+              title={invoiceNumberingFrozen ? "Numérotation figée après émission de factures" : ""}
+            />
           </Row>
           <Row label="TVA" border>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -409,6 +437,9 @@ export default function Settings() {
         <Section title="Affichage">
           <Row label="Masquer le CA sur le dashboard" sub="Utile si des tiers voient l'écran" border>
             <Toggle value={!showCA} onChange={v => setShowCA(!v)} />
+          </Row>
+          <Row label="Afficher le widget prix gasoil" sub="Retire le bloc gasoil du dashboard si inutile" border>
+            <Toggle value={showGasoilWidget} onChange={setShowGasoilWidget} />
           </Row>
           <Row label="Devise" border>
             <select style={{ fontSize: "13px", color: "var(--text-2)", background: "transparent", outline: "none", border: "none", cursor: "pointer" }}

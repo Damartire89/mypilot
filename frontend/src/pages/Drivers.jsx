@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
@@ -146,8 +146,19 @@ export default function Drivers() {
   const toast = useToast();
   const [modal, setModal] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [search, setSearch] = useState("");
 
   const { data: drivers = [], isLoading } = useQuery({ queryKey: ["drivers"], queryFn: getDrivers });
+
+  const filteredDrivers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return drivers;
+    return drivers.filter(d =>
+      (d.name || "").toLowerCase().includes(q) ||
+      (d.phone || "").toLowerCase().includes(q) ||
+      (d.license_number || "").toLowerCase().includes(q)
+    );
+  }, [drivers, search]);
 
   const addMutation = useMutation({
     mutationFn: createDriver,
@@ -231,11 +242,26 @@ export default function Drivers() {
 
         {drivers.length > 0 && (
           <>
+            {drivers.length >= 6 && (
+              <input
+                type="search"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Rechercher un chauffeur…"
+                style={{
+                  width: "100%", boxSizing: "border-box",
+                  border: "1px solid var(--border)", borderRadius: "9px",
+                  padding: "9px 12px", fontSize: "13px",
+                  background: "var(--bg)", color: "var(--text)",
+                  marginBottom: "10px",
+                }}
+              />
+            )}
             <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>
-              Chauffeurs ({drivers.length})
+              Chauffeurs ({filteredDrivers.length}{search ? ` / ${drivers.length}` : ""})
             </p>
             <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
-              {drivers.map((driver, i) => {
+              {filteredDrivers.map((driver, i) => {
                 const s = STATUS[driver.status] || STATUS.off;
                 const carteProAlert = alertLabel(driver.carte_pro_alert);
                 const carteVtcAlert = alertLabel(driver.carte_vtc_alert);

@@ -21,6 +21,7 @@ class CompanySettings(Base):
 
     # Affichage
     hide_ca = Column(Boolean, default=False)
+    show_gasoil_widget = Column(Boolean, default=True)
     currency = Column(String(10), default="EUR")
     date_format = Column(String(20), default="dd/mm/yyyy")
     week_start = Column(String(10), default="monday")

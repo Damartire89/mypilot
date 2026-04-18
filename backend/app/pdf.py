@@ -1,6 +1,6 @@
 """Génération de factures PDF pour myPilot."""
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timedelta
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.colors import HexColor, black, white
@@ -67,22 +67,22 @@ def generate_invoice_pdf(ride, company, driver, settings) -> bytes:
     c.setFillColor(HexColor("#67e8f9"))
     c.drawString(20*mm, PAGE_H - 32*mm, activity.upper())
 
-    # Référence facture (droite)
-    ref = ride.reference or f"#{ride.id}"
+    # Référence facture (droite) — mention légale obligatoire "Facture n°"
+    ref = ride.reference or f"{ride.id}"
+    facture_label = f"Facture n° {ref}"
     c.setFillColor(white)
     c.setFont("Helvetica-Bold", 14)
-    ref_w = c.stringWidth(ref, "Helvetica-Bold", 14)
-    c.drawString(PAGE_W - 20*mm - ref_w, PAGE_H - 22*mm, ref)
-    c.setFont("Helvetica", 8)
-    c.setFillColor(HexColor("#94c8d8"))
-    lbl_w = c.stringWidth("RÉFÉRENCE", "Helvetica", 8)
-    c.drawString(PAGE_W - 20*mm - lbl_w, PAGE_H - 30*mm, "RÉFÉRENCE")
+    ref_w = c.stringWidth(facture_label, "Helvetica-Bold", 14)
+    c.drawString(PAGE_W - 20*mm - ref_w, PAGE_H - 22*mm, facture_label)
 
-    # Date d'émission
-    today = datetime.now().strftime("%d/%m/%Y")
+    # Date d'émission + date limite de paiement (mention légale)
+    today_dt = datetime.now()
+    today = today_dt.strftime("%d/%m/%Y")
+    due_date = (today_dt + timedelta(days=30)).strftime("%d/%m/%Y")
     c.setFont("Helvetica", 8)
     c.setFillColor(HexColor("#94c8d8"))
-    c.drawString(PAGE_W - 20*mm - c.stringWidth(f"Émis le {today}", "Helvetica", 8), PAGE_H - 38*mm, f"Émis le {today}")
+    c.drawString(PAGE_W - 20*mm - c.stringWidth(f"Émis le {today}", "Helvetica", 8), PAGE_H - 30*mm, f"Émis le {today}")
+    c.drawString(PAGE_W - 20*mm - c.stringWidth(f"Payable avant le {due_date}", "Helvetica", 8), PAGE_H - 38*mm, f"Payable avant le {due_date}")
 
     # ── Infos entreprise (sous l'en-tête) ────────────────────────────────────
     y = PAGE_H - 72*mm
@@ -132,11 +132,31 @@ def generate_invoice_pdf(ride, company, driver, settings) -> bytes:
         c.drawString(80*mm, ypos, str(value) if value else "—")
         return ypos - 6*mm
 
+    # Bloc destinataire (mention légale — identité du client)
+    if ride.client_name:
+        y = section_title("Facturé à", y)
+        c.setFillColor(DARK_TEXT)
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(20*mm, y, ride.client_name)
+        y -= 6*mm
+        c.setFillColor(GRAY_TEXT)
+        c.setFont("Helvetica", 8.5)
+        if getattr(ride, "client_address", None):
+            for line in ride.client_address.split("\n"):
+                c.drawString(20*mm, y, line.strip())
+                y -= 5*mm
+        if getattr(ride, "client_siret", None):
+            c.drawString(20*mm, y, f"SIRET : {ride.client_siret}")
+            y -= 5*mm
+        if ride.bon_transport:
+            c.drawString(20*mm, y, f"Bon de transport : {ride.bon_transport}")
+            y -= 5*mm
+        y -= 2*mm
+
     y = section_title("Détails de la course", y)
 
     ride_date = _fr_datetime(ride.ride_at) if ride.ride_at else "—"
     y = row("Date & heure", ride_date, y)
-    y = row("Client", ride.client_name or "—", y)
     y = row("Départ", ride.origin or "—", y)
     y = row("Arrivée", ride.destination or "—", y)
     if ride.km_distance:
@@ -155,13 +175,17 @@ def generate_invoice_pdf(ride, company, driver, settings) -> bytes:
     status_label = STATUS_LABELS.get(ride.status, ride.status or "—")
     y = row("Statut", status_label, y)
 
+    tva_non_applicable = False
     if settings and settings.tva_rate:
         try:
             tva = float(settings.tva_rate) / 100
-            ht = float(ride.amount) / (1 + tva)
-            tva_amt = float(ride.amount) - ht
-            y = row("Montant HT", f"{ht:.2f} €", y)
-            y = row(f"TVA ({settings.tva_rate}%)", f"{tva_amt:.2f} €", y)
+            if tva == 0:
+                tva_non_applicable = True
+            else:
+                ht = float(ride.amount) / (1 + tva)
+                tva_amt = float(ride.amount) - ht
+                y = row("Montant HT", f"{ht:.2f} €", y)
+                y = row(f"TVA ({settings.tva_rate}%)", f"{tva_amt:.2f} €", y)
         except Exception:
             pass
 
@@ -212,11 +236,20 @@ def generate_invoice_pdf(ride, company, driver, settings) -> bytes:
     c.setFillColor(GRAY_MID)
     c.setFont("Helvetica", 7.5)
 
+    # Mention légale TVA si franchise en base
+    if tva_non_applicable:
+        c.setFillColor(DARK_TEXT)
+        c.setFont("Helvetica-Oblique", 8)
+        c.drawCentredString(PAGE_W / 2, footer_y, "TVA non applicable, art. 293 B du CGI")
+        footer_y -= 4.5*mm
+        c.setFillColor(GRAY_MID)
+        c.setFont("Helvetica", 7.5)
+
     footer_parts = []
     if settings and settings.invoice_footer:
         footer_parts.append(settings.invoice_footer)
     else:
-        footer_parts.append("Document généré par myPilot — logiciel de gestion de flotte")
+        footer_parts.append("En cas de retard de paiement, indemnité forfaitaire de 40 € (art. L441-10 C. com.)")
 
     c.drawCentredString(PAGE_W / 2, footer_y, " · ".join(footer_parts))
 

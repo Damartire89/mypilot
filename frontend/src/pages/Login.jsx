@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, register } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
@@ -55,6 +55,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [slowWarning, setSlowWarning] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  useEffect(() => {
+    client.get("/health").catch(() => {});
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

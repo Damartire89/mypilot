@@ -12,6 +12,9 @@ from app.auth import hash_password, create_access_token
 router = APIRouter(prefix="/invitations", tags=["invitations"])
 
 
+_ALLOWED_INVITE_ROLES = {"admin", "manager", "readonly"}
+
+
 def _get_valid_invitation(token: str, db: Session) -> Invitation:
     invitation = db.query(Invitation).filter(Invitation.token == token).first()
     if not invitation:
@@ -20,6 +23,14 @@ def _get_valid_invitation(token: str, db: Session) -> Invitation:
         raise HTTPException(status_code=410, detail="Invitation déjà utilisée")
     if invitation.expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
         raise HTTPException(status_code=410, detail="Invitation expirée")
+    if invitation.role not in _ALLOWED_INVITE_ROLES:
+        raise HTTPException(status_code=400, detail="Rôle d'invitation invalide")
+    company = db.query(Company).filter(
+        Company.id == invitation.company_id,
+        Company.deleted_at.is_(None),
+    ).first()
+    if not company:
+        raise HTTPException(status_code=410, detail="Entreprise inactive ou supprimée")
     return invitation
 
 

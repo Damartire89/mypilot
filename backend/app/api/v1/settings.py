@@ -1,12 +1,38 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 from app.database import get_db
 from app.models.settings import CompanySettings
 from app.models.company import Company
+from app.models.ride import Ride
 from app.auth import get_current_company, get_current_user, require_role
 from app.models.user import User
+
+
+def _has_issued_invoices(company_id: int, db: Session) -> bool:
+    """True si au moins une facture a été émise (issued_at renseigné) pour cette entreprise."""
+    return db.query(Ride.id).filter(
+        Ride.company_id == company_id,
+        Ride.issued_at.isnot(None),
+    ).first() is not None
+
+
+def _validate_iban(iban: str) -> bool:
+    """Validation IBAN format + checksum mod 97 (ISO 13616)."""
+    s = iban.replace(" ", "").replace("-", "").upper()
+    if len(s) < 15 or len(s) > 34:
+        return False
+    if not s[:2].isalpha() or not s[2:4].isdigit():
+        return False
+    if not s.isalnum():
+        return False
+    rearranged = s[4:] + s[:4]
+    numeric = "".join(str(ord(c) - 55) if c.isalpha() else c for c in rearranged)
+    try:
+        return int(numeric) % 97 == 1
+    except ValueError:
+        return False
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -32,6 +58,7 @@ class SettingsUpdate(BaseModel):
 
     # Affichage
     hide_ca: Optional[bool] = None
+    show_gasoil_widget: Optional[bool] = None
     currency: Optional[str] = None
     date_format: Optional[str] = None
     week_start: Optional[str] = None
@@ -68,6 +95,7 @@ def get_or_create_settings(company_id: int, db: Session) -> CompanySettings:
 @router.get("")
 def get_settings(company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_role("admin", "superadmin"))):
     s = get_or_create_settings(company.id, db)
+    invoice_numbering_frozen = _has_issued_invoices(company.id, db)
     return {
         "company_name": company.name,
         "siret": company.siret,
@@ -76,12 +104,14 @@ def get_settings(company: Company = Depends(get_current_company), db: Session = 
         "activity_type": company.activity_type,
         "invoice_prefix": s.invoice_prefix,
         "invoice_next_number": s.invoice_next_number,
+        "invoice_numbering_frozen": invoice_numbering_frozen,
         "tva_rate": s.tva_rate,
         "invoice_footer": s.invoice_footer,
         "enabled_payments": s.enabled_payments.split(",") if s.enabled_payments else [],
         "enabled_alerts": s.enabled_alerts.split(",") if s.enabled_alerts else [],
         "alert_days_before": s.alert_days_before,
         "hide_ca": s.hide_ca,
+        "show_gasoil_widget": s.show_gasoil_widget if s.show_gasoil_widget is not None else True,
         "currency": s.currency,
         "date_format": s.date_format,
         "week_start": s.week_start,
@@ -116,11 +146,26 @@ def update_settings(body: SettingsUpdate, company: Company = Depends(get_current
     if body.activity_type is not None:
         company.activity_type = body.activity_type
 
+    # Valider IBAN si fourni
+    if body.iban is not None and body.iban.strip():
+        if not _validate_iban(body.iban):
+            raise HTTPException(status_code=400, detail="IBAN invalide (format ou checksum incorrect)")
+
+    # Freeze numérotation facture : si des factures sont déjà émises,
+    # interdire modif de invoice_prefix et invoice_next_number.
+    if body.invoice_prefix is not None or body.invoice_next_number is not None:
+        if _has_issued_invoices(company.id, db):
+            raise HTTPException(
+                status_code=409,
+                detail="Numérotation figée : des factures ont déjà été émises. Modification de invoice_prefix/invoice_next_number interdite.",
+            )
+
     # Mettre à jour settings
     s = get_or_create_settings(company.id, db)
     simple_fields = [
         "invoice_prefix", "invoice_next_number", "tva_rate", "invoice_footer",
-        "alert_days_before", "hide_ca", "currency", "date_format", "week_start",
+        "alert_days_before", "hide_ca", "show_gasoil_widget",
+        "currency", "date_format", "week_start",
         "notif_new_ride", "notif_unpaid", "notif_alerts", "notif_daily_report",
         "default_km_rate", "night_rate_multiplier", "weekend_rate_multiplier", "max_ride_amount_alert",
         "billing_email", "zone_activite", "numero_licence", "iban",

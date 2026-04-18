@@ -45,7 +45,7 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
 
 
 @router.post("/login", response_model=TokenResponse)
-@limiter.limit("20/minute;100/hour")
+@limiter.limit("5/minute;30/hour")
 def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.hashed_password):

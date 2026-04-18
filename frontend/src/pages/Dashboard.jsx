@@ -7,6 +7,7 @@ import { getStatsSummary, getRides, getStatsMonthly } from "../api/rides";
 import { getVehicles } from "../api/vehicles";
 import { getDrivers } from "../api/drivers";
 import { getPrixGasoil } from "../api/gasoil";
+import { getSettings } from "../api/settings";
 import { useAuth } from "../context/AuthContext";
 
 const KPI_CONFIGS = [
@@ -153,7 +154,9 @@ export default function Dashboard() {
   const { data: rides = [], isLoading: ridesLoading } = useQuery({ queryKey: ["rides", { limit: 5 }], queryFn: () => getRides({ limit: 5 }) });
   const { data: vehicles = [] } = useQuery({ queryKey: ["vehicles"], queryFn: getVehicles });
   const { data: drivers = [] } = useQuery({ queryKey: ["drivers"], queryFn: getDrivers, staleTime: 60000 });
-  const { data: gasoil } = useQuery({ queryKey: ["gasoil"], queryFn: getPrixGasoil, staleTime: 3600000, retry: false });
+  const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: getSettings, staleTime: 300000, retry: false });
+  const showGasoil = settings?.show_gasoil_widget !== false;
+  const { data: gasoil } = useQuery({ queryKey: ["gasoil"], queryFn: getPrixGasoil, staleTime: 3600000, retry: false, enabled: showGasoil });
   const { data: monthly } = useQuery({ queryKey: ["stats-monthly", now.getFullYear(), now.getMonth() + 1], queryFn: () => getStatsMonthly(now.getFullYear(), now.getMonth() + 1), staleTime: 60000, retry: false });
   const isLoading = statsLoading || ridesLoading;
 
@@ -268,7 +271,7 @@ export default function Dashboard() {
         )}
 
         {/* Widget Gasoil */}
-        {gasoil?.prix && Object.keys(gasoil.prix).length > 0 && (
+        {showGasoil && gasoil?.prix && Object.keys(gasoil.prix).length > 0 && (
           <div style={{
             background: "var(--surface)", border: "1px solid var(--border)",
             borderRadius: "12px", padding: "12px 16px", marginBottom: "20px",

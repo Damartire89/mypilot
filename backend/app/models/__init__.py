@@ -4,3 +4,5 @@ from app.models.driver import Driver
 from app.models.vehicle import Vehicle
 from app.models.ride import Ride
 from app.models.settings import CompanySettings
+from app.models.invitation import Invitation
+from app.models.audit_log import AuditLog

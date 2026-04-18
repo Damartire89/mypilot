@@ -1,12 +1,13 @@
 import secrets
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from app.models.invitation import Invitation
 from app.schemas.invitation import InviteCreate, InvitationOut, MemberOut, MemberRoleUpdate
 from app.auth import require_role
+from app.audit import log_action
 from typing import List
 
 router = APIRouter(prefix="/members", tags=["members"])
@@ -23,6 +24,7 @@ def list_members(
 @router.post("/invite", response_model=InvitationOut, status_code=201)
 def invite_member(
     body: InviteCreate,
+    request: Request,
     current_user: User = Depends(require_role("admin", "superadmin")),
     db: Session = Depends(get_db),
 ):
@@ -50,6 +52,11 @@ def invite_member(
         expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=7),
     )
     db.add(invitation)
+    log_action(
+        db, current_user, "invite", "user",
+        details={"invited_email": body.email, "role": body.role},
+        request=request,
+    )
     db.commit()
     db.refresh(invitation)
     return invitation
@@ -59,6 +66,7 @@ def invite_member(
 def update_member_role(
     user_id: int,
     body: MemberRoleUpdate,
+    request: Request,
     current_user: User = Depends(require_role("admin", "superadmin")),
     db: Session = Depends(get_db),
 ):
@@ -74,7 +82,14 @@ def update_member_role(
     if member.id == current_user.id:
         raise HTTPException(status_code=400, detail="Impossible de modifier son propre rôle")
 
+    old_role = member.role
     member.role = body.role
+    log_action(
+        db, current_user, "change_role", "user",
+        entity_id=member.id,
+        details={"target_email": member.email, "from": old_role, "to": body.role},
+        request=request,
+    )
     db.commit()
     db.refresh(member)
     return member
@@ -83,6 +98,7 @@ def update_member_role(
 @router.delete("/{user_id}", status_code=204)
 def remove_member(
     user_id: int,
+    request: Request,
     current_user: User = Depends(require_role("admin", "superadmin")),
     db: Session = Depends(get_db),
 ):
@@ -95,5 +111,11 @@ def remove_member(
     if member.id == current_user.id:
         raise HTTPException(status_code=400, detail="Impossible de se supprimer soi-même")
 
+    log_action(
+        db, current_user, "delete", "user",
+        entity_id=member.id,
+        details={"target_email": member.email, "role": member.role},
+        request=request,
+    )
     db.delete(member)
     db.commit()

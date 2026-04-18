@@ -4,6 +4,7 @@ Source : data.economie.gouv.fr (Prix des carburants en France)
 """
 import urllib.request
 import json
+import threading
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
 from app.auth import get_current_user
@@ -12,8 +13,10 @@ from fastapi import Depends
 
 router = APIRouter(prefix="/gasoil", tags=["gasoil"])
 
-# Cache en mémoire : 1h de TTL pour éviter de taper l'API à chaque requête
+# Cache en mémoire : 1h de TTL pour éviter de taper l'API à chaque requête.
+# Lock nécessaire car FastAPI peut appeler en threadpool (plusieurs workers threads).
 _cache: dict = {"data": None, "fetched_at": None}
+_cache_lock = threading.Lock()
 CACHE_TTL_SECONDS = 3600
 
 FUEL_LABELS = {
@@ -53,21 +56,27 @@ def _fetch_prix_nationaux() -> dict:
         raise HTTPException(status_code=503, detail=f"Impossible de récupérer les prix carburant : {str(e)}")
 
 
-@router.get("")
-def get_prix_gasoil(_: User = Depends(get_current_user)):
-    """Retourne les prix moyens nationaux des carburants (cache 1h)."""
-    now = datetime.now(timezone.utc)
-
-    # Vérifier cache
-    if (
+def _cache_is_fresh(now: datetime) -> bool:
+    return (
         _cache["data"] is not None
         and _cache["fetched_at"] is not None
         and (now - _cache["fetched_at"]).total_seconds() < CACHE_TTL_SECONDS
-    ):
-        return {**_cache["data"], "cached": True, "fetched_at": _cache["fetched_at"].isoformat()}
+    )
+
+
+@router.get("")
+def get_prix_gasoil(_: User = Depends(get_current_user)):
+    """Retourne les prix moyens nationaux des carburants (cache 1h, thread-safe)."""
+    now = datetime.now(timezone.utc)
+
+    with _cache_lock:
+        if _cache_is_fresh(now):
+            return {**_cache["data"], "cached": True, "fetched_at": _cache["fetched_at"].isoformat()}
 
     prix = _fetch_prix_nationaux()
-    _cache["data"] = {"prix": prix}
-    _cache["fetched_at"] = now
+
+    with _cache_lock:
+        _cache["data"] = {"prix": prix}
+        _cache["fetched_at"] = now
 
     return {"prix": prix, "cached": False, "fetched_at": now.isoformat()}
