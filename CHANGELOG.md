@@ -5,6 +5,30 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-18 — v1.8.5 (audit settings + staleTime admin + 13 tests)
+
+### Audit
+- `[feature]` `settings.update_settings` : log action `update_settings` si champ sensible modifié (iban/billing_email/invoice_prefix/siret/company_name/tva_rate)
+- `[feature]` IBAN masqué dans audit : seuls les 4 derniers chars loggés (conformité RGPD)
+- `[feature]` Diff before/after par champ dans details JSON
+
+### UX / Perf
+- `[feature]` SuperAdmin.jsx : `staleTime` 30s (companies) / 60s (stats) / 15s (audit logs) → moins de refetch inutile
+- `[feature]` SuperAdmin.jsx : `keepPreviousData` sur audit-logs pour éviter flash blanc au changement de filtre
+
+### Tests
+- `[feature]` `test_settings_audit_diff.py` (7 tests : diff, masquage IBAN, multi-change, fields non audités)
+- `[feature]` `test_members_role_delete.py` (6 tests : role whitelist, self-modify/delete blocked, isolation company, MemberOut sans password)
+- **123 tests pytest verts** (110 → 123)
+
+---
+
+## 2026-04-18 — v1.8.4 (perf list_all_companies N+1)
+
+- `[feature]` `/admin/companies` : une seule requête GROUP BY pour tous les counts membres (au lieu de N queries)
+
+---
+
 ## 2026-04-18 — v1.8.3 (audit invoice_issued + robustesse UI + tests invite)
 
 ### Audit

@@ -19,17 +19,21 @@ export default function SuperAdmin() {
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ["admin-companies"],
     queryFn: getCompanies,
+    staleTime: 30000,
   });
 
   const { data: stats } = useQuery({
     queryKey: ["admin-global-stats"],
     queryFn: getGlobalStats,
+    staleTime: 60000,
   });
 
   const [auditFilter, setAuditFilter] = useState({ companyId: null, action: "" });
   const { data: auditLogs } = useQuery({
     queryKey: ["admin-audit-logs", auditFilter.companyId, auditFilter.action],
     queryFn: () => getAuditLogs({ companyId: auditFilter.companyId ?? undefined, action: auditFilter.action || undefined, limit: 50 }),
+    staleTime: 15000,
+    keepPreviousData: true,
   });
 
   const { data: members = [] } = useQuery({

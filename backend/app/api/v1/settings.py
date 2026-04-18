@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -7,7 +7,14 @@ from app.models.settings import CompanySettings
 from app.models.company import Company
 from app.models.ride import Ride
 from app.auth import get_current_company, get_current_user, require_role
+from app.audit import log_action
 from app.models.user import User
+
+# Champs dont le changement mérite une trace d'audit (identité, facturation, bancaire)
+_AUDITED_FIELDS = {
+    "iban", "billing_email", "invoice_prefix", "invoice_next_number",
+    "siret", "company_name", "tva_rate",
+}
 
 
 def _has_issued_invoices(company_id: int, db: Session) -> bool:
@@ -133,7 +140,19 @@ def get_settings(company: Company = Depends(get_current_company), db: Session = 
 
 
 @router.patch("")
-def update_settings(body: SettingsUpdate, company: Company = Depends(get_current_company), db: Session = Depends(get_db), _: User = Depends(require_role("admin", "superadmin"))):
+def update_settings(body: SettingsUpdate, request: Request, company: Company = Depends(get_current_company), db: Session = Depends(get_db), current_user: User = Depends(require_role("admin", "superadmin"))):
+    # Capture avant-valeurs sur champs sensibles (pour diff audit)
+    s_pre = db.query(CompanySettings).filter(CompanySettings.company_id == company.id).first()
+    before = {
+        "iban": (s_pre.iban if s_pre else None),
+        "billing_email": (s_pre.billing_email if s_pre else None),
+        "invoice_prefix": (s_pre.invoice_prefix if s_pre else None),
+        "invoice_next_number": (s_pre.invoice_next_number if s_pre else None),
+        "tva_rate": (s_pre.tva_rate if s_pre else None),
+        "siret": company.siret,
+        "company_name": company.name,
+    }
+
     # Mettre à jour company
     if body.company_name is not None:
         company.name = body.company_name
@@ -179,6 +198,30 @@ def update_settings(body: SettingsUpdate, company: Company = Depends(get_current
         s.enabled_payments = ",".join(body.enabled_payments)
     if body.enabled_alerts is not None:
         s.enabled_alerts = ",".join(body.enabled_alerts)
+
+    # Audit : log les champs sensibles modifiés (avant → après, IBAN masqué)
+    after = {
+        "iban": s.iban, "billing_email": s.billing_email,
+        "invoice_prefix": s.invoice_prefix, "invoice_next_number": s.invoice_next_number,
+        "tva_rate": s.tva_rate,
+        "siret": company.siret, "company_name": company.name,
+    }
+    changes = {}
+    for f in _AUDITED_FIELDS:
+        if before.get(f) != after.get(f):
+            old_v, new_v = before.get(f), after.get(f)
+            if f == "iban":
+                # masquer IBAN : ne garder que 4 derniers chars
+                old_v = (old_v[-4:] if old_v else None)
+                new_v = (new_v[-4:] if new_v else None)
+            changes[f] = {"from": old_v, "to": new_v}
+    if changes:
+        log_action(
+            db, current_user, "update_settings", "company",
+            entity_id=company.id,
+            details={"changes": changes},
+            request=request,
+        )
 
     db.commit()
     return {"ok": True}
