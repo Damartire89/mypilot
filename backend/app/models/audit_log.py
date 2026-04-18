@@ -9,7 +9,7 @@ class AuditLog(Base):
     company_id = Column(Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     user_email = Column(String(200), nullable=True)
-    action = Column(String(50), nullable=False)
+    action = Column(String(50), nullable=False, index=True)
     entity_type = Column(String(50), nullable=False)
     entity_id = Column(Integer, nullable=True)
     details = Column(Text, nullable=True)

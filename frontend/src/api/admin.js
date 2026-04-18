@@ -23,3 +23,18 @@ export async function updateUserRole(userId, role) {
   const { data } = await client.patch(`/api/v1/admin/users/${userId}/role`, { role });
   return data;
 }
+
+export async function getGlobalStats() {
+  const { data } = await client.get("/api/v1/admin/stats/global");
+  return data;
+}
+
+export async function getAuditLogs({ companyId, action, limit = 50, offset = 0 } = {}) {
+  const params = new URLSearchParams();
+  if (companyId != null) params.set("company_id", String(companyId));
+  if (action) params.set("action", action);
+  params.set("limit", String(limit));
+  params.set("offset", String(offset));
+  const { data } = await client.get(`/api/v1/admin/audit-logs?${params.toString()}`);
+  return data;
+}

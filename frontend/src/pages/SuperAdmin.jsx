@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCompanies, getCompanyUsers, deleteCompany, resetPassword, updateUserRole } from "../api/admin";
+import { getCompanies, getCompanyUsers, deleteCompany, resetPassword, updateUserRole, getGlobalStats, getAuditLogs } from "../api/admin";
 import Layout from "../components/Layout";
 
 const ROLE_LABELS = { admin: "Admin", manager: "Manager", readonly: "Lecture", superadmin: "Super Admin" };
@@ -19,6 +19,17 @@ export default function SuperAdmin() {
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ["admin-companies"],
     queryFn: getCompanies,
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ["admin-global-stats"],
+    queryFn: getGlobalStats,
+  });
+
+  const [auditFilter, setAuditFilter] = useState({ companyId: null, action: "" });
+  const { data: auditLogs } = useQuery({
+    queryKey: ["admin-audit-logs", auditFilter.companyId, auditFilter.action],
+    queryFn: () => getAuditLogs({ companyId: auditFilter.companyId ?? undefined, action: auditFilter.action || undefined, limit: 50 }),
   });
 
   const { data: members = [] } = useQuery({
@@ -194,6 +205,81 @@ export default function SuperAdmin() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Stats globales */}
+        {stats && (
+          <div style={{ marginTop: "20px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px" }}>
+            <p style={{ margin: "0 0 12px", fontSize: "12px", fontWeight: 600, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: "0.5px" }}>KPIs globaux</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "10px" }}>
+              {[
+                { label: "Entreprises", value: `${stats.companies?.active ?? 0}`, sub: `${stats.companies?.deleted ?? 0} supprimées` },
+                { label: "Utilisateurs", value: stats.users ?? 0 },
+                { label: "Chauffeurs", value: stats.drivers ?? 0 },
+                { label: "Véhicules", value: stats.vehicles ?? 0 },
+                { label: "Courses", value: stats.rides ?? 0 },
+                { label: "Logs audit", value: stats.audit_logs ?? 0 },
+              ].map((k) => (
+                <div key={k.label} style={{ padding: "10px 12px", background: "var(--bg)", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                  <p style={{ margin: 0, fontSize: "11px", color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.3px" }}>{k.label}</p>
+                  <p style={{ margin: "4px 0 0", fontSize: "18px", fontWeight: 700, color: "var(--text)" }}>{k.value}</p>
+                  {k.sub && <p style={{ margin: "2px 0 0", fontSize: "10.5px", color: "var(--text-3)" }}>{k.sub}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Audit logs */}
+        <div style={{ marginTop: "16px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border)", background: "var(--bg)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "var(--text-2)" }}>
+              Audit logs {auditLogs?.total != null && <span style={{ color: "var(--text-3)", fontWeight: 400 }}>· {auditLogs.total} total</span>}
+            </p>
+            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              <select
+                value={auditFilter.companyId ?? ""}
+                onChange={(e) => setAuditFilter((f) => ({ ...f, companyId: e.target.value ? Number(e.target.value) : null }))}
+                style={{ fontSize: "12px", border: "1px solid var(--border)", borderRadius: "7px", padding: "5px 8px", background: "var(--surface)", color: "var(--text)", outline: "none" }}
+              >
+                <option value="">Toutes entreprises</option>
+                {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <input
+                type="text"
+                placeholder="Action (ex: change_role)"
+                value={auditFilter.action}
+                onChange={(e) => setAuditFilter((f) => ({ ...f, action: e.target.value }))}
+                style={{ fontSize: "12px", border: "1px solid var(--border)", borderRadius: "7px", padding: "5px 8px", background: "var(--surface)", color: "var(--text)", outline: "none", width: "160px" }}
+              />
+            </div>
+          </div>
+          <div style={{ maxHeight: "360px", overflowY: "auto" }}>
+            {(auditLogs?.items || []).map((log) => (
+              <div key={log.id} style={{ padding: "10px 14px", borderBottom: "1px solid var(--border)", fontSize: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "8px", flexWrap: "wrap" }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <span style={{ fontWeight: 600, color: "var(--text)" }}>{log.action}</span>
+                    <span style={{ color: "var(--text-3)" }}> · {log.entity_type}{log.entity_id ? `#${log.entity_id}` : ""}</span>
+                    <span style={{ color: "var(--text-3)" }}> · {log.user_email || `user#${log.user_id ?? "?"}`}</span>
+                  </div>
+                  <span style={{ fontSize: "10.5px", color: "var(--text-3)", fontFamily: "monospace" }}>
+                    {log.created_at ? new Date(log.created_at).toLocaleString("fr-FR") : ""}
+                  </span>
+                </div>
+                {log.details && Object.keys(log.details).length > 0 && (
+                  <pre style={{ margin: "4px 0 0", fontSize: "10.5px", color: "var(--text-3)", background: "var(--bg)", padding: "6px 8px", borderRadius: "6px", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                    {JSON.stringify(log.details, null, 0)}
+                  </pre>
+                )}
+              </div>
+            ))}
+            {auditLogs && auditLogs.items.length === 0 && (
+              <div style={{ padding: "30px 20px", textAlign: "center" }}>
+                <p style={{ fontSize: "12.5px", color: "var(--text-3)", margin: 0 }}>Aucun log avec ces filtres</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

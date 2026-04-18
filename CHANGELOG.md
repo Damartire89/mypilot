@@ -5,6 +5,25 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-18 — v1.8.2 (UI audit logs + stats + indexes)
+
+### Superadmin
+- `[feature]` SuperAdmin.jsx : panneau **KPIs globaux** (entreprises actives/supprimées, users, drivers, vehicles, rides, audit_logs) — lit `/admin/stats/global`
+- `[feature]` SuperAdmin.jsx : panneau **Audit logs** (50 derniers, filtre entreprise + action) — lit `/admin/audit-logs`
+- `[feature]` api/admin.js : `getGlobalStats()`, `getAuditLogs({ companyId, action, limit, offset })`
+
+### Performance
+- `[feature]` Index `idx_audit_logs_action` sur `audit_logs.action` (migration `b8c9d0e1f2a3`) — accélère filtre action côté superadmin
+
+### Tests
+- `[feature]` `test_admin_stats_endpoint.py` (4 tests : route, signature, shape réponse, audit shape)
+- **105 tests pytest verts** (101 → 105)
+
+### Notes
+- Build frontend 502 kB (gzip 134 kB), +5 kB vs v1.8.1
+
+---
+
 ## 2026-04-18 — v1.8 (Audit Opus 4.7 — Sprint 1 suite & fin)
 
 ### Sécurité & audit
