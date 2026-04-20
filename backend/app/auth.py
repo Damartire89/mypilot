@@ -1,15 +1,13 @@
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 import bcrypt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from app.config import settings
+from app.cookies import read_access_token
 from app.database import get_db
 from app.models.user import User
 from app.models.company import Company
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 ALGORITHM = "HS256"
 
@@ -31,12 +29,15 @@ def create_access_token(user_id: int, company_id: int) -> str:
     )
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     credentials_error = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Token invalide",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    token = read_access_token(request)
+    if not token:
+        raise credentials_error
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
         user_id = int(payload["sub"])

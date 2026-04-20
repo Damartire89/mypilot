@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.database import get_db
@@ -6,6 +6,7 @@ from app.models.company import Company
 from app.models.user import User
 from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse
 from app.auth import hash_password, verify_password, create_access_token, get_current_user
+from app.cookies import set_auth_cookies, clear_auth_cookies
 from app.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -18,7 +19,7 @@ class ChangePasswordRequest(BaseModel):
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/hour")
-def register(request: Request, body: RegisterRequest, db: Session = Depends(get_db)):
+def register(request: Request, response: Response, body: RegisterRequest, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=400, detail="Email déjà utilisé")
 
@@ -41,12 +42,13 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
     db.refresh(user)
 
     token = create_access_token(user.id, company.id)
+    set_auth_cookies(response, token)
     return TokenResponse(access_token=token, company_name=company.name)
 
 
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit("5/minute;30/hour")
-def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
+def login(request: Request, response: Response, body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
@@ -55,7 +57,13 @@ def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     if not company:
         raise HTTPException(status_code=500, detail="Erreur interne — entreprise introuvable")
     token = create_access_token(user.id, user.company_id)
+    set_auth_cookies(response, token)
     return TokenResponse(access_token=token, company_name=company.name)
+
+
+@router.post("/logout", status_code=204)
+def logout(response: Response):
+    clear_auth_cookies(response)
 
 
 @router.post("/change-password", status_code=204)

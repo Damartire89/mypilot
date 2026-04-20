@@ -28,9 +28,7 @@ export default function InviteAccept() {
     setError(null);
     try {
       const data = await acceptInvitation(token, password);
-      const meRes = await client.get("/api/v1/auth/me", {
-        headers: { Authorization: `Bearer ${data.access_token}` }
-      });
+      const meRes = await client.get("/api/v1/auth/me");
       signIn(data.access_token, { name: data.company_name }, meRes.data);
       navigate("/dashboard");
     } catch (err) {

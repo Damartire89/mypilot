@@ -39,7 +39,7 @@ function StepDots({ current }) {
 }
 
 export default function Onboarding() {
-  const { company, signIn, token, user } = useAuth();
+  const { company, signIn, user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [step, setStep] = useState(1);

@@ -35,13 +35,10 @@ export async function getStatsMonthly(year, month) {
 }
 
 export async function downloadRidePDF(id) {
-  const token = localStorage.getItem("token");
   const base = import.meta.env.VITE_API_URL || "http://localhost:8002";
   const url = `${base}/api/v1/rides/export/pdf/${id}`;
 
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const response = await fetch(url, { credentials: "include" });
 
   if (!response.ok) throw new Error(`Export PDF échoué (${response.status})`);
 
@@ -57,14 +54,11 @@ export async function downloadRidePDF(id) {
 }
 
 export async function exportRidesCSV(params = {}) {
-  const token = localStorage.getItem("token");
   const base = import.meta.env.VITE_API_URL || "http://localhost:8002";
   const query = new URLSearchParams(params).toString();
   const url = `${base}/api/v1/rides/export/csv${query ? "?" + query : ""}`;
 
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const response = await fetch(url, { credentials: "include" });
 
   if (!response.ok) throw new Error(`Export échoué (${response.status})`);
 

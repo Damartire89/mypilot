@@ -4,48 +4,46 @@ import client from "../api/client";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
-  const [company, setCompany] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("company")); } catch { return null; }
-  });
-  const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("user")); } catch { return null; }
-  });
+  const [user, setUser] = useState(null);
+  const [company, setCompany] = useState(null);
+  const [booted, setBooted] = useState(false);
 
-  // Charger le profil utilisateur si token présent mais user absent
   useEffect(() => {
-    if (token && !user) {
-      client.get("/api/v1/auth/me")
-        .then(({ data }) => {
-          setUser(data);
-          localStorage.setItem("user", JSON.stringify(data));
-        })
-        .catch(() => signOut());
-    }
-  }, [token]);
+    client.get("/api/v1/auth/me")
+      .then(({ data }) => {
+        setUser(data);
+        setCompany({ id: data.company_id, name: data.company_name });
+      })
+      .catch(() => {
+        setUser(null);
+        setCompany(null);
+      })
+      .finally(() => setBooted(true));
+  }, []);
 
-  function signIn(tokenValue, companyData, userData = null) {
-    localStorage.setItem("token", tokenValue);
-    localStorage.setItem("company", JSON.stringify(companyData));
-    setToken(tokenValue);
-    setCompany(companyData);
+  async function signIn(_tokenValue, companyData, userData = null) {
+    if (companyData) setCompany(companyData);
     if (userData) {
-      localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
+    } else {
+      try {
+        const { data } = await client.get("/api/v1/auth/me");
+        setUser(data);
+        setCompany({ id: data.company_id, name: data.company_name });
+      } catch {
+        /* ignore */
+      }
     }
   }
 
-  function signOut() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("company");
-    localStorage.removeItem("user");
-    setToken(null);
-    setCompany(null);
+  async function signOut() {
+    try { await client.post("/api/v1/auth/logout"); } catch { /* ignore */ }
     setUser(null);
+    setCompany(null);
   }
 
   return (
-    <AuthContext.Provider value={{ token, company, user, signIn, signOut, isAuth: !!token }}>
+    <AuthContext.Provider value={{ user, company, signIn, signOut, isAuth: !!user, booted }}>
       {children}
     </AuthContext.Provider>
   );
