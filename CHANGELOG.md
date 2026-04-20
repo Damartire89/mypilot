@@ -5,6 +5,25 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-20 — v1.10.0 (Export FEC comptable)
+
+### Feature compta
+- `[feature]` `backend/app/fec.py` : générateur Fichier des Écritures Comptables (spec DGFiP, art. A47 A-1 LPF)
+  - 18 colonnes pipe-séparées, CRLF, format date AAAAMMJJ, montants FR (virgule)
+  - Compte client 411000 (débit) + produit 706000 (crédit), équilibré par course facturée
+  - Compte auxiliaire client `C` + id ride (10 chars)
+  - Nom fichier normé : `{SIREN}FEC{AAAAMMJJ}.txt`
+  - Ignore les courses sans `issued_at` (non facturées)
+- `[feature]` `GET /api/v1/rides/export/fec?year=AAAA` : téléchargement (BOM UTF-8, text/plain)
+- `[feature]` Bouton "Export comptable FEC" dans Settings → Facturation & comptabilité
+- `[feature]` Audit log : action `export_fec` avec year + count
+
+### Tests
+- `[feature]` `test_fec.py` (10 tests : formats, équilibre D/C, tri, sanitize, nom fichier)
+- **149 tests pytest verts** (139 → 149)
+
+---
+
 ## 2026-04-20 — v1.9.0 (JWT HttpOnly cookies + CSRF)
 
 ### Sécurité (anti-XSS)

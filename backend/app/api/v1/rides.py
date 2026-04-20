@@ -11,6 +11,7 @@ from app.schemas.ride import RideCreate, RideUpdate, RideOut, PAYMENT_TYPES, RID
 from app.auth import get_current_company, get_current_user, require_write_access
 from app.models.user import User
 from app.pdf import generate_invoice_pdf
+from app.fec import build_fec, fec_filename
 from app.audit import log_action
 from typing import List, Optional
 from datetime import date, datetime, timezone, timedelta
@@ -160,6 +161,47 @@ def export_rides_csv(
     return StreamingResponse(
         iter([content]),
         media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/export/fec")
+def export_fec(
+    request: Request,
+    year: int = Query(..., ge=2000, le=2100, description="Année comptable (AAAA)"),
+    company: Company = Depends(get_current_company),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Export Fichier des Écritures Comptables (FEC) — spec DGFiP.
+
+    Inclut toutes les courses de l'année `year` dont la facture a été émise
+    (issued_at NOT NULL). Compte client 411000 au débit, produit 706000 au
+    crédit, équilibré par construction.
+    """
+    rides = (
+        db.query(Ride)
+        .filter(
+            Ride.company_id == company.id,
+            Ride.issued_at.isnot(None),
+            extract("year", Ride.issued_at) == year,
+        )
+        .all()
+    )
+
+    content = build_fec(rides, company.name)
+
+    log_action(
+        db, current_user, "export_fec", "ride",
+        details={"year": year, "count": len(rides)},
+        request=request,
+    )
+    db.commit()
+
+    filename = fec_filename(company.siret, year)
+    return StreamingResponse(
+        iter(["\ufeff" + content]),
+        media_type="text/plain; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 

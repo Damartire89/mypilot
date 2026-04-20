@@ -53,6 +53,24 @@ export async function downloadRidePDF(id) {
   URL.revokeObjectURL(a.href);
 }
 
+export async function exportFEC(year) {
+  const base = import.meta.env.VITE_API_URL || "http://localhost:8002";
+  const url = `${base}/api/v1/rides/export/fec?year=${encodeURIComponent(year)}`;
+
+  const response = await fetch(url, { credentials: "include" });
+  if (!response.ok) throw new Error(`Export FEC échoué (${response.status})`);
+
+  const blob = await response.blob();
+  const filename = response.headers.get("content-disposition")?.match(/filename="(.+)"/)?.[1] || `FEC-${year}.txt`;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
 export async function exportRidesCSV(params = {}) {
   const base = import.meta.env.VITE_API_URL || "http://localhost:8002";
   const query = new URLSearchParams(params).toString();
