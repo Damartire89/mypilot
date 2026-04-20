@@ -12,19 +12,30 @@ CSRF_COOKIE = "mypilot_csrf"
 CSRF_HEADER = "X-CSRF-Token"
 
 
-def _cookie_params() -> dict:
-    is_prod = settings.environment == "production"
+def _is_secure_request(request: Request | None) -> bool:
+    """Détecte HTTPS, en tenant compte du reverse proxy (X-Forwarded-Proto)."""
+    if request is None:
+        return False
+    if request.url.scheme == "https":
+        return True
+    if request.headers.get("x-forwarded-proto", "").lower() == "https":
+        return True
+    return False
+
+
+def _cookie_params(request: Request | None = None) -> dict:
+    secure = _is_secure_request(request) or settings.environment == "production"
     return {
-        "secure": is_prod,
-        "samesite": "none" if is_prod else "lax",
+        "secure": secure,
+        "samesite": "none" if secure else "lax",
         "path": "/",
         "max_age": settings.access_token_expire_minutes * 60,
     }
 
 
-def set_auth_cookies(response: Response, token: str) -> str:
+def set_auth_cookies(response: Response, token: str, request: Request | None = None) -> str:
     """Pose access token (HttpOnly) + CSRF token (lisible JS). Retourne le CSRF."""
-    params = _cookie_params()
+    params = _cookie_params(request)
     response.set_cookie(ACCESS_COOKIE, token, httponly=True, **params)
     csrf = secrets.token_urlsafe(32)
     response.set_cookie(CSRF_COOKIE, csrf, httponly=False, **params)

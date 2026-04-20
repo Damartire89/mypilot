@@ -75,5 +75,5 @@ def accept_invitation(token: str, body: InvitationAccept, request: Request, resp
 
     company = db.get(Company, invitation.company_id)
     token_jwt = create_access_token(user.id, user.company_id)
-    set_auth_cookies(response, token_jwt)
+    set_auth_cookies(response, token_jwt, request)
     return TokenResponse(access_token=token_jwt, company_name=company.name)

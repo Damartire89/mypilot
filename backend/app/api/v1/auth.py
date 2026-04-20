@@ -42,7 +42,7 @@ def register(request: Request, response: Response, body: RegisterRequest, db: Se
     db.refresh(user)
 
     token = create_access_token(user.id, company.id)
-    set_auth_cookies(response, token)
+    set_auth_cookies(response, token, request)
     return TokenResponse(access_token=token, company_name=company.name)
 
 
@@ -57,7 +57,7 @@ def login(request: Request, response: Response, body: LoginRequest, db: Session 
     if not company:
         raise HTTPException(status_code=500, detail="Erreur interne — entreprise introuvable")
     token = create_access_token(user.id, user.company_id)
-    set_auth_cookies(response, token)
+    set_auth_cookies(response, token, request)
     return TokenResponse(access_token=token, company_name=company.name)
 
 
