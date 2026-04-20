@@ -5,7 +5,7 @@ import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
 import { getSettings, updateSettings } from "../api/settings";
-import { exportRidesCSV } from "../api/rides";
+import { exportRidesCSV, exportFEC } from "../api/rides";
 import { changePassword } from "../api/auth";
 import { getMembers, inviteMember, removeMember } from "../api/members";
 
@@ -590,6 +590,31 @@ export default function Settings() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </Row>
+          </button>
+          <button
+            style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+            onClick={async () => {
+              const input = window.prompt("Année comptable à exporter (AAAA) :", String(new Date().getFullYear()));
+              if (!input) return;
+              const year = parseInt(input, 10);
+              if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+                toast("Année invalide", "error");
+                return;
+              }
+              try {
+                await exportFEC(year);
+                toast("Fichier FEC téléchargé", "success");
+              } catch {
+                toast("Export FEC échoué", "error");
+              }
+            }}
+          >
+            <Row label="Export comptable FEC" sub="Fichier des Écritures Comptables (DGFiP) — à envoyer à l'expert-comptable" border>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/>
               </svg>
             </Row>
           </button>
