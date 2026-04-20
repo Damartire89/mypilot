@@ -77,9 +77,7 @@ export default function Login() {
       } else {
         data = await register(form.company_name, form.email, form.password);
       }
-      const meRes = await client.get("/api/v1/auth/me", {
-        headers: { Authorization: `Bearer ${data.access_token}` }
-      });
+      const meRes = await client.get("/api/v1/auth/me");
       signIn(data.access_token, { name: data.company_name }, meRes.data);
       if (mode === "register") {
         localStorage.setItem("onboarding_needed", "1");

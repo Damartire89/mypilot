@@ -5,6 +5,27 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-20 — v1.9.0 (JWT HttpOnly cookies + CSRF)
+
+### Sécurité (anti-XSS)
+- `[feature]` JWT migré de `localStorage` → cookie `mypilot_access` HttpOnly, SameSite=Lax, Secure en prod
+- `[feature]` CSRF double-submit : cookie `mypilot_csrf` (lisible JS) + header `X-CSRF-Token` vérifié sur POST/PATCH/PUT/DELETE
+- `[feature]` Endpoint `POST /auth/logout` — clear des cookies côté serveur
+- `[feature]` `get_current_user` lit cookie en priorité, fallback header `Authorization: Bearer` (compat progressive)
+- `[feature]` Paths exemptés CSRF : `/auth/login`, `/auth/register`, `/auth/logout`, `/invitations/{token}/accept`
+
+### Frontend
+- `[feature]` `axios` passe `withCredentials: true`, injecte automatiquement `X-CSRF-Token` depuis le cookie
+- `[feature]` `AuthContext` hydraté via `/auth/me` au boot — plus aucun token/user en localStorage
+- `[feature]` `BootGate` sur routes privées/publiques : attend la réponse `/me` avant de décider du routing
+- `[fix]` `downloadRidePDF` / `exportRidesCSV` : `fetch` passe `credentials: "include"` (plus de Bearer manuel)
+
+### Tests
+- `[feature]` `test_auth_cookies.py` (8 tests : HttpOnly/SameSite, clear, fallback header, CSRF exempt)
+- **139 tests pytest verts** (131 → 139)
+
+---
+
 ## 2026-04-18 — v1.8.7 (audit export CSV)
 
 ### Audit

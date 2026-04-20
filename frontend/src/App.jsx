@@ -15,19 +15,22 @@ import Onboarding from "./pages/Onboarding";
 import { useAuth } from "./context/AuthContext";
 
 function PrivateRoute({ children }) {
-  const { isAuth } = useAuth();
+  const { isAuth, booted } = useAuth();
+  if (!booted) return null;
   return isAuth ? children : <Navigate to="/" replace />;
 }
 
 function PublicRoute({ children }) {
-  const { isAuth } = useAuth();
+  const { isAuth, booted } = useAuth();
+  if (!booted) return null;
   return isAuth ? <Navigate to="/dashboard" replace /> : children;
 }
 
 function SuperAdminRoute({ children }) {
-  const { user, isAuth } = useAuth();
+  const { user, isAuth, booted } = useAuth();
+  if (!booted) return null;
   if (!isAuth) return <Navigate to="/" replace />;
-  if (!user) return null; // en cours de chargement
+  if (!user) return null;
   return user.role === "superadmin" ? children : <Navigate to="/dashboard" replace />;
 }
 
