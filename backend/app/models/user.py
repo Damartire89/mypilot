@@ -6,7 +6,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     email = Column(String(200), nullable=False, unique=True)
     hashed_password = Column(String(200), nullable=False)
     role = Column(String(20), default="admin")  # superadmin | admin | manager | readonly
