@@ -39,6 +39,14 @@ async def csrf_protection(request: Request, call_next):
     return await call_next(request)
 
 
+_CSP = (
+    "default-src 'none'; "
+    "frame-ancestors 'none'; "
+    "base-uri 'none'; "
+    "form-action 'self'"
+)
+
+
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -46,6 +54,9 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["Content-Security-Policy"] = _CSP
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-site"
     if app_settings.environment == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response

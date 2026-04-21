@@ -5,6 +5,19 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-21 — v1.10.4 (CSP + headers Vercel + cache statiques)
+
+### Sécurité
+- `[infra]` `backend/app/main.py` : ajout headers CSP très restrictif sur l'API (`default-src 'none'`, JSON-only)
+  - + `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-site`
+- `[infra]` `frontend/vercel.json` : headers globaux statiques sur Vercel
+  - CSP : `default-src 'self'`, `script-src 'self'`, connect-src restreint à `mypilot-api.onrender.com`
+  - HSTS preload, X-Frame-Options DENY, Referrer-Policy strict, Permissions-Policy
+  - Cache-Control `public, max-age=31536000, immutable` sur `/assets/*` (cache 1 an, fichiers hashés)
+- 149 tests verts, build front OK
+
+---
+
 ## 2026-04-21 — v1.10.3 (Index DB perf)
 
 ### Performance backend
