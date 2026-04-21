@@ -99,7 +99,7 @@ export default function SuperAdmin() {
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }} className="grid-cols-1 lg:grid-cols-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
 
           {/* Liste entreprises */}
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>

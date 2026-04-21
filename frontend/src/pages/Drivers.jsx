@@ -274,8 +274,6 @@ export default function Drivers() {
                       padding: "12px 14px", cursor: "pointer",
                     }}
                     onClick={() => navigate(`/drivers/${driver.id}`)}
-                    onMouseEnter={e => e.currentTarget.style.background = "var(--bg)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "var(--surface)"}
                   >
                     <div style={{
                       width: 36, height: 36, borderRadius: "9px",
