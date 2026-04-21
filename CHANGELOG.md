@@ -5,6 +5,32 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-21 — v1.10.1 (Optimisation : bundle, deps, Pydantic V2)
+
+### Performance frontend
+- `[infra]` `frontend/src/App.jsx` : code-splitting via `React.lazy()` + `Suspense` sur toutes les routes (sauf Login)
+  - Bundle initial : **504 kB → 204 kB** (gzip 134 → 64 kB) — gain ~60 %
+  - Chaque page chargée à la demande (Dashboard, Rides, Drivers, Vehicles, Stats, Settings, etc.)
+
+### Mise à jour dépendances
+- `[infra]` `npm update` : 0 vulnérabilité (résolution transitive via puppeteer dev)
+- `[infra]` pip 25.1.1 → 26.0.1
+- `[infra]` `backend/requirements.txt` patches mineurs :
+  - fastapi 0.115.6 → 0.136.0
+  - sqlalchemy 2.0.36 → 2.0.49
+  - pydantic 2.10.4 → 2.13.3
+  - alembic 1.14.0 → 1.18.4
+  - uvicorn 0.32.1 → 0.44.0
+  - python-jose 3.3.0 → 3.5.0
+  - bcrypt **maintenu en 4.0.1** (5.0 = breaking changes connus avec passlib)
+
+### Code quality
+- `[fix]` `backend/app/schemas/invitation.py` : migration `class Config` → `ConfigDict` (Pydantic V2 idiomatique)
+  - Élimine 3 `DeprecationWarning` Pydantic
+- **149 tests pytest verts** après upgrade (aucune régression)
+
+---
+
 ## 2026-04-20 — v1.10.0 (Export FEC comptable)
 
 ### Feature compta
