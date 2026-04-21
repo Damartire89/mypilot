@@ -156,6 +156,57 @@ a, button { transition: all 0.15s ease; }
 .animate-slide-up { animation: slideUp 0.25s ease both; }
 .animate-toast-in { animation: toastIn 0.2s ease both; }
 
+/* ─── Stats layout : flux mobile, grid 2 cols desktop ────── */
+.stats-grid { display: block; }
+.stats-col { display: block; }
+@media (min-width: 1024px) {
+  .stats-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .stats-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .stats-col > div { margin-bottom: 0 !important; }
+}
+
+/* ─── Drivers / Vehicles grid : liste mobile, cards desktop ─ */
+.drivers-grid,
+.vehicles-grid {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.drivers-grid .driver-row,
+.vehicles-grid .vehicle-row {
+  border-bottom: 1px solid var(--border);
+}
+.drivers-grid .driver-row:last-child,
+.vehicles-grid .vehicle-row:last-child {
+  border-bottom: none;
+}
+@media (min-width: 1024px) {
+  .drivers-grid,
+  .vehicles-grid {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+  .drivers-grid .driver-row,
+  .vehicles-grid .vehicle-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+    padding: 16px !important;
+  }
+}
+
 /* ─── Modal : bottom-sheet mobile, centré desktop ────────── */
 .modal-overlay {
   position: fixed; inset: 0;

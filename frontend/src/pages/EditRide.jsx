@@ -132,7 +132,7 @@ export default function EditRide() {
   if (loadingRide || !form) {
     return (
       <Layout title="Modifier la course">
-        <div className="max-w-2xl mx-auto p-4 lg:p-6" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className="max-w-2xl lg:max-w-3xl mx-auto p-4 lg:p-8" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <SkeletonCard style={{ height: 48 }} />
           <SkeletonCard style={{ height: 176 }} />
           <SkeletonCard style={{ height: 192 }} />
@@ -144,7 +144,7 @@ export default function EditRide() {
 
   return (
     <Layout title="Modifier la course">
-      <div className="max-w-2xl mx-auto p-4 lg:p-6 animate-fade-in">
+      <div className="max-w-2xl lg:max-w-3xl mx-auto p-4 lg:p-8 animate-fade-in">
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>

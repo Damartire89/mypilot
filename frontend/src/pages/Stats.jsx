@@ -52,7 +52,7 @@ export default function Stats() {
 
   return (
     <Layout title="Statistiques">
-      <div className="max-w-2xl mx-auto p-4 lg:p-6 animate-fade-in">
+      <div className="max-w-2xl lg:max-w-[1280px] mx-auto p-4 lg:p-8 animate-fade-in">
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
@@ -110,7 +110,8 @@ export default function Stats() {
         )}
 
         {!isLoading && stats && (
-          <>
+          <div className="stats-grid">
+            <div className="stats-col">
             {/* CA principal */}
             <div style={{
               background: "var(--brand)", borderRadius: "14px", padding: "20px 20px 18px", marginBottom: "12px",
@@ -156,6 +157,8 @@ export default function Stats() {
               </div>
             )}
 
+            </div>
+            <div className="stats-col">
             {/* Répartition */}
             {stats.by_type.length > 0 && (
               <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
@@ -214,7 +217,8 @@ export default function Stats() {
                 linkLabel="+ Enregistrer une course"
               />
             )}
-          </>
+            </div>
+          </div>
         )}
       </div>
     </Layout>

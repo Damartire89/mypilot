@@ -77,7 +77,7 @@ export default function Rides() {
 
   return (
     <Layout title="Courses">
-      <div className="max-w-2xl mx-auto p-4 lg:p-6 animate-fade-in">
+      <div className="max-w-2xl lg:max-w-[1440px] mx-auto p-4 lg:p-8 animate-fade-in">
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
@@ -225,79 +225,162 @@ export default function Rides() {
           />
         )}
 
-        {!isLoading && groupByDate(filteredRides).map(({ label, rides: group }) => (
-          <div key={label} style={{ marginBottom: "16px" }}>
-            <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>
-              {label}
-            </p>
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
-              {group.map((ride, i) => {
-                const ps = PAYMENT_STYLES[ride.payment_type] || { bg: "var(--surface-2)", color: "var(--text-2)" };
-                return (
-                  <div
-                    key={ride.id}
-                    style={{
-                      display: "flex", alignItems: "flex-start", gap: "12px",
-                      padding: "12px 14px",
-                      borderBottom: i < group.length - 1 ? "1px solid var(--border)" : "none",
-                    }}
-                  >
-                    <button
-                      onClick={() => ride.status === "pending" && markPaid.mutate(ride.id)}
-                      title={ride.status === "pending" ? "Marquer comme payé" : "Payé"}
-                      style={{
-                        width: 10, height: 10, borderRadius: "50%", flexShrink: 0, marginTop: 5,
-                        background: ride.status === "paid" ? "var(--success)" : "var(--warning)",
-                        border: "none", cursor: ride.status === "pending" ? "pointer" : "default",
-                        padding: 0,
-                      }}
-                    />
-                    <div
-                      style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
-                      onClick={() => navigate(`/rides/${ride.id}/edit`)}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                        <p style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--text)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {ride.client_name || "Course sans nom"}
-                        </p>
-                        <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)", flexShrink: 0 }}>
-                          {Number(ride.amount).toFixed(0)}€
-                        </span>
+        {/* Mobile / tablette : liste groupée par date */}
+        {!isLoading && (
+          <div className="lg:hidden">
+            {groupByDate(filteredRides).map(({ label, rides: group }) => (
+              <div key={label} style={{ marginBottom: "16px" }}>
+                <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>
+                  {label}
+                </p>
+                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+                  {group.map((ride, i) => {
+                    const ps = PAYMENT_STYLES[ride.payment_type] || { bg: "var(--surface-2)", color: "var(--text-2)" };
+                    return (
+                      <div
+                        key={ride.id}
+                        style={{
+                          display: "flex", alignItems: "flex-start", gap: "12px",
+                          padding: "12px 14px",
+                          borderBottom: i < group.length - 1 ? "1px solid var(--border)" : "none",
+                        }}
+                      >
+                        <button
+                          onClick={() => ride.status === "pending" && markPaid.mutate(ride.id)}
+                          title={ride.status === "pending" ? "Marquer comme payé" : "Payé"}
+                          style={{
+                            width: 10, height: 10, borderRadius: "50%", flexShrink: 0, marginTop: 5,
+                            background: ride.status === "paid" ? "var(--success)" : "var(--warning)",
+                            border: "none", cursor: ride.status === "pending" ? "pointer" : "default",
+                            padding: 0,
+                          }}
+                        />
+                        <div
+                          style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
+                          onClick={() => navigate(`/rides/${ride.id}/edit`)}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                            <p style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--text)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {ride.client_name || "Course sans nom"}
+                            </p>
+                            <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)", flexShrink: 0 }}>
+                              {Number(ride.amount).toFixed(0)}€
+                            </span>
+                          </div>
+                          {(ride.origin || ride.destination) && (
+                            <p style={{ fontSize: "12px", color: "var(--text-3)", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {ride.origin}{ride.destination ? ` → ${ride.destination}` : ""}
+                            </p>
+                          )}
+                          {ride.notes && (
+                            <p style={{ fontSize: "11px", color: "var(--text-3)", margin: "1px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontStyle: "italic" }}>
+                              {ride.notes}
+                            </p>
+                          )}
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "5px", flexWrap: "wrap" }}>
+                            {ride.ride_at && (
+                              <span style={{ fontSize: "11px", color: "var(--text-3)" }}>
+                                {new Date(ride.ride_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}
+                              </span>
+                            )}
+                            {ride.payment_type && (
+                              <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 7px", borderRadius: "99px", background: ps.bg, color: ps.color }}>
+                                {PAYMENT_LABELS[ride.payment_type] || ride.payment_type}
+                              </span>
+                            )}
+                            {ride.status === "pending" && (
+                              <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 7px", borderRadius: "99px", background: "var(--warning-bg)", color: "var(--warning)" }}>
+                                En attente
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      {(ride.origin || ride.destination) && (
-                        <p style={{ fontSize: "12px", color: "var(--text-3)", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {ride.origin}{ride.destination ? ` → ${ride.destination}` : ""}
-                        </p>
-                      )}
-                      {ride.notes && (
-                        <p style={{ fontSize: "11px", color: "var(--text-3)", margin: "1px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontStyle: "italic" }}>
-                          {ride.notes}
-                        </p>
-                      )}
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "5px", flexWrap: "wrap" }}>
-                        {ride.ride_at && (
-                          <span style={{ fontSize: "11px", color: "var(--text-3)" }}>
-                            {new Date(ride.ride_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}
-                          </span>
-                        )}
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Desktop : vraie table */}
+        {!isLoading && filteredRides.length > 0 && (
+          <div className="hidden lg:block" style={{
+            background: "var(--surface)", border: "1px solid var(--border)",
+            borderRadius: "14px", overflow: "hidden",
+            boxShadow: "var(--shadow-sm)",
+          }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+              <thead style={{ background: "var(--surface-2)" }}>
+                <tr>
+                  <th style={thRides}>Statut</th>
+                  <th style={thRides}>Client</th>
+                  <th style={thRides}>Trajet</th>
+                  <th style={thRides}>Date</th>
+                  <th style={thRides}>Paiement</th>
+                  <th style={{ ...thRides, textAlign: "right" }}>Montant</th>
+                  <th style={{ ...thRides, width: 40 }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRides.map((ride, i) => {
+                  const ps = PAYMENT_STYLES[ride.payment_type] || { bg: "var(--surface-2)", color: "var(--text-2)" };
+                  const isLast = i === filteredRides.length - 1;
+                  const d = ride.ride_at ? new Date(ride.ride_at) : null;
+                  return (
+                    <tr
+                      key={ride.id}
+                      onClick={() => navigate(`/rides/${ride.id}/edit`)}
+                      style={{ cursor: "pointer", transition: "background 120ms" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                    >
+                      <td style={{ ...tdRides, borderBottom: isLast ? "none" : "1px solid var(--border)", width: 70 }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (ride.status === "pending") markPaid.mutate(ride.id); }}
+                          title={ride.status === "pending" ? "Marquer comme payé" : "Payé"}
+                          style={{
+                            width: 10, height: 10, borderRadius: "50%",
+                            background: ride.status === "paid" ? "var(--success)" : "var(--warning)",
+                            border: "none", cursor: ride.status === "pending" ? "pointer" : "default",
+                            padding: 0, verticalAlign: "middle",
+                          }}
+                        />
+                      </td>
+                      <td style={{ ...tdRides, fontWeight: 600, color: "var(--text)", borderBottom: isLast ? "none" : "1px solid var(--border)" }}>
+                        {ride.client_name || "Course sans nom"}
+                      </td>
+                      <td style={{ ...tdRides, color: "var(--text-2)", fontSize: "12.5px", borderBottom: isLast ? "none" : "1px solid var(--border)", maxWidth: "320px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {ride.origin || "—"}{ride.destination ? ` → ${ride.destination}` : ""}
+                      </td>
+                      <td style={{ ...tdRides, color: "var(--text-2)", fontSize: "12.5px", borderBottom: isLast ? "none" : "1px solid var(--border)", whiteSpace: "nowrap" }}>
+                        {d ? d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }) + " " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }) : "—"}
+                      </td>
+                      <td style={{ ...tdRides, borderBottom: isLast ? "none" : "1px solid var(--border)" }}>
                         {ride.payment_type && (
-                          <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 7px", borderRadius: "99px", background: ps.bg, color: ps.color }}>
+                          <span style={{ fontSize: "11px", fontWeight: 600, padding: "3px 9px", borderRadius: "99px", background: ps.bg, color: ps.color }}>
                             {PAYMENT_LABELS[ride.payment_type] || ride.payment_type}
                           </span>
                         )}
+                      </td>
+                      <td style={{ ...tdRides, textAlign: "right", fontWeight: 800, color: "var(--text)", borderBottom: isLast ? "none" : "1px solid var(--border)" }}>
+                        {Number(ride.amount).toFixed(0)}€
+                      </td>
+                      <td style={{ ...tdRides, borderBottom: isLast ? "none" : "1px solid var(--border)", textAlign: "right" }}>
                         {ride.status === "pending" && (
-                          <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 7px", borderRadius: "99px", background: "var(--warning-bg)", color: "var(--warning)" }}>
+                          <span style={{ fontSize: "10.5px", fontWeight: 600, padding: "2px 7px", borderRadius: "99px", background: "var(--warning-bg)", color: "var(--warning)" }}>
                             En attente
                           </span>
                         )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        ))}
+        )}
 
         {!isLoading && rides.length >= limit && (
           <button
@@ -334,6 +417,21 @@ export default function Rides() {
     </Layout>
   );
 }
+
+const thRides = {
+  textAlign: "left",
+  padding: "10px 16px",
+  fontSize: "11px",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: "var(--text-3)",
+  fontWeight: 700,
+  borderBottom: "1px solid var(--border)",
+};
+const tdRides = {
+  padding: "13px 16px",
+  verticalAlign: "middle",
+};
 
 function localDateStr(iso) {
   if (!iso) return "";
