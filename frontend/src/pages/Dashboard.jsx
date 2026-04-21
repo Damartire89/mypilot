@@ -734,7 +734,7 @@ export default function Dashboard() {
   return (
     <Layout title="Tableau de bord">
       {/* ───────── Mobile / tablette ───────── */}
-      <div className="lg:hidden max-w-3xl mx-auto p-4 animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div className="lg:hidden max-w-3xl mx-auto p-4 animate-fade-in flex flex-col gap-5">
         {activationBlock}
         {alertsBlock}
         {gasoilBlock}

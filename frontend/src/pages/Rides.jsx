@@ -399,13 +399,12 @@ export default function Rides() {
       {/* FAB mobile */}
       <Link
         to="/rides/new"
-        className="lg:hidden"
+        className="lg:hidden flex items-center justify-center"
         style={{
           position: "fixed", bottom: "76px", right: "16px",
           width: 48, height: 48,
           background: "var(--brand)",
           borderRadius: "12px",
-          display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "var(--shadow-md)",
           zIndex: 40,
         }}
