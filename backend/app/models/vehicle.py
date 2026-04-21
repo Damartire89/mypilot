@@ -6,7 +6,7 @@ class Vehicle(Base):
     __tablename__ = "vehicles"
 
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
     plate = Column(String(20), nullable=False)
     brand = Column(String(100), nullable=True)
     model = Column(String(100), nullable=True)

@@ -6,7 +6,7 @@ class Invitation(Base):
     __tablename__ = "invitations"
 
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
     email = Column(String(200), nullable=False)
     role = Column(String(20), nullable=False, default="manager")
     token = Column(String(64), nullable=False, unique=True)

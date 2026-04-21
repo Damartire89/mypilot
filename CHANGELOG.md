@@ -5,6 +5,21 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-21 — v1.10.3 (Index DB perf)
+
+### Performance backend
+- `[infra]` `migrations/c1d2e3f4a5b6_add_perf_indexes.py` : index multi-tenants sur les hot paths
+  - `rides` : composites (company_id, ride_at), (company_id, status), (company_id, driver_id), (company_id, issued_at)
+  - `drivers`, `vehicles`, `users`, `invitations` : index sur `company_id`
+- `[infra]` Modèles ORM : `index=True` sur `company_id` (Ride/Driver/Vehicle/User/Invitation) + `driver_id` sur Ride
+- Impact : requêtes "list par company" passent de scan séquentiel à index scan — gain proportionnel au volume (négligeable à 10 lignes, x100 à 100k+ courses)
+- 149 tests verts, aucune régression
+
+### Déploiement
+- Render : `alembic upgrade head` à exécuter post-deploy (migration auto si configurée, sinon manuel)
+
+---
+
 ## 2026-04-21 — v1.10.2 (Vite vendor chunks)
 
 ### Performance

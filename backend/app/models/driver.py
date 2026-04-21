@@ -6,7 +6,7 @@ class Driver(Base):
     __tablename__ = "drivers"
 
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
     name = Column(String(200), nullable=False)
     phone = Column(String(20), nullable=True)
     license_number = Column(String(50), nullable=True)
