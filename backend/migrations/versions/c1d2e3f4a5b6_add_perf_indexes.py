@@ -4,12 +4,9 @@ Revision ID: c1d2e3f4a5b6
 Revises: b8c9d0e1f2a3
 Create Date: 2026-04-21
 
-Index multi-tenants : presque toutes les requêtes filtrent sur company_id.
-Index composites (company_id, X) couvrent les patterns suivants :
-- rides : filter company + tri ride_at, filter company + status, filter company + driver
-- drivers/vehicles/users : filter company
-- invitations : lookup token (déjà unique mais on s'assure de l'index)
-- users.email : déjà unique
+Index complémentaires aux migrations b2c3d4e5f6a7 (rides) et a7b8c9d0e1f2 (users/invitations).
+Ajoute uniquement les composites encore manquants et les company_id drivers/vehicles.
+Utilise IF NOT EXISTS pour être idempotent en cas de réapplication.
 """
 from alembic import op
 
@@ -20,29 +17,19 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Rides — table la plus volumineuse, requêtes les plus fréquentes
-    op.create_index('idx_rides_company_ride_at', 'rides', ['company_id', 'ride_at'])
-    op.create_index('idx_rides_company_status', 'rides', ['company_id', 'status'])
-    op.create_index('idx_rides_company_driver', 'rides', ['company_id', 'driver_id'])
-    op.create_index('idx_rides_company_issued_at', 'rides', ['company_id', 'issued_at'])
+    # Composites rides manquants
+    op.execute("CREATE INDEX IF NOT EXISTS idx_rides_company_status ON rides (company_id, status)")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_rides_company_driver ON rides (company_id, driver_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_rides_company_issued_at ON rides (company_id, issued_at)")
 
-    # Drivers / Vehicles — listings filtrés par company
-    op.create_index('idx_drivers_company', 'drivers', ['company_id'])
-    op.create_index('idx_vehicles_company', 'vehicles', ['company_id'])
-
-    # Users — lookup par company (members list)
-    op.create_index('idx_users_company', 'users', ['company_id'])
-
-    # Invitations — lookup par company (list pending invites)
-    op.create_index('idx_invitations_company', 'invitations', ['company_id'])
+    # Drivers / Vehicles — pas encore indexés sur company_id
+    op.execute("CREATE INDEX IF NOT EXISTS idx_drivers_company ON drivers (company_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_vehicles_company ON vehicles (company_id)")
 
 
 def downgrade() -> None:
-    op.drop_index('idx_invitations_company', 'invitations')
-    op.drop_index('idx_users_company', 'users')
-    op.drop_index('idx_vehicles_company', 'vehicles')
-    op.drop_index('idx_drivers_company', 'drivers')
-    op.drop_index('idx_rides_company_issued_at', 'rides')
-    op.drop_index('idx_rides_company_driver', 'rides')
-    op.drop_index('idx_rides_company_status', 'rides')
-    op.drop_index('idx_rides_company_ride_at', 'rides')
+    op.execute("DROP INDEX IF EXISTS idx_vehicles_company")
+    op.execute("DROP INDEX IF EXISTS idx_drivers_company")
+    op.execute("DROP INDEX IF EXISTS idx_rides_company_issued_at")
+    op.execute("DROP INDEX IF EXISTS idx_rides_company_driver")
+    op.execute("DROP INDEX IF EXISTS idx_rides_company_status")
