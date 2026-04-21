@@ -180,7 +180,7 @@ export default function Vehicles() {
 
   return (
     <Layout title="Flotte">
-      <div className="max-w-2xl mx-auto p-4 lg:p-6 animate-fade-in">
+      <div className="max-w-2xl lg:max-w-[1280px] mx-auto p-4 lg:p-8 animate-fade-in">
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
@@ -261,7 +261,7 @@ export default function Vehicles() {
             <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>
               Véhicules ({filteredVehicles.length}{search ? ` / ${vehicles.length}` : ""})
             </p>
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+            <div className="vehicles-grid">
               {filteredVehicles.map((vehicle, i) => {
                 const s = STATUS[vehicle.status] || STATUS.available;
                 const ctAlert  = alertLabel(vehicle.ct_alert);
@@ -269,7 +269,7 @@ export default function Vehicles() {
                 const adsAlert = alertLabel(vehicle.ads_alert);
                 const taxAlert = alertLabel(vehicle.taximetre_alert);
                 return (
-                  <div key={vehicle.id} style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "13px 14px", borderBottom: i < vehicles.length - 1 ? "1px solid var(--border)" : "none" }}>
+                  <div key={vehicle.id} className="vehicle-row" style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "13px 14px" }}>
                     <div style={{ width: 36, height: 36, borderRadius: "9px", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h5l3 5v3h-8V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>

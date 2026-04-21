@@ -189,7 +189,7 @@ export default function Drivers() {
 
   return (
     <Layout title="Équipe">
-      <div className="max-w-2xl mx-auto p-4 lg:p-6 animate-fade-in">
+      <div className="max-w-2xl lg:max-w-[1280px] mx-auto p-4 lg:p-8 animate-fade-in">
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
@@ -260,7 +260,7 @@ export default function Drivers() {
             <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>
               Chauffeurs ({filteredDrivers.length}{search ? ` / ${drivers.length}` : ""})
             </p>
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+            <div className="drivers-grid">
               {filteredDrivers.map((driver, i) => {
                 const s = STATUS[driver.status] || STATUS.off;
                 const carteProAlert = alertLabel(driver.carte_pro_alert);
@@ -268,14 +268,14 @@ export default function Drivers() {
                 return (
                   <div
                     key={driver.id}
+                    className="driver-row"
                     style={{
                       display: "flex", alignItems: "flex-start", gap: "12px",
                       padding: "12px 14px", cursor: "pointer",
-                      borderBottom: i < drivers.length - 1 ? "1px solid var(--border)" : "none",
                     }}
                     onClick={() => navigate(`/drivers/${driver.id}`)}
                     onMouseEnter={e => e.currentTarget.style.background = "var(--bg)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                    onMouseLeave={e => e.currentTarget.style.background = "var(--surface)"}
                   >
                     <div style={{
                       width: 36, height: 36, borderRadius: "9px",
