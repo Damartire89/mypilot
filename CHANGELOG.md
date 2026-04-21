@@ -5,6 +5,18 @@ Scopes : `infra` | `feature` | `design` | `doc` | `fix`
 
 ---
 
+## 2026-04-21 — v1.10.2 (Vite vendor chunks)
+
+### Performance
+- `[infra]` `frontend/vite.config.js` : `manualChunks` splitte les vendors en 3 chunks cacheables
+  - `react-vendor` (react + react-dom) — ~182 kB, change très rarement
+  - `react-router` — ~49 kB
+  - `axios` — ~37 kB
+  - Bundle d'entrée (index) : 210 kB → **28 kB** (la majeure partie devient cache navigateur persistant)
+- Avantage : après un redeploy d'app (code métier), le navigateur ne re-télécharge que ~28 kB au lieu de 210 kB
+
+---
+
 ## 2026-04-21 — v1.10.1 (Optimisation : bundle, deps, Pydantic V2)
 
 ### Performance frontend
