@@ -169,249 +169,256 @@ export default function Dashboard() {
   const hasRide = rides.length > 0;
   const activationDone = hasVehicle && hasDriver && hasRide;
 
-  return (
-    <Layout title="Tableau de bord">
-      <div className="max-w-3xl mx-auto p-4 lg:p-6 animate-fade-in">
+  const activationBlock = !activationDone && !isLoading && (
+    <div style={{
+      background: "var(--surface)", border: "1px solid var(--border)",
+      borderRadius: "12px", padding: "14px 16px",
+    }}>
+      <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--text)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        Mise en route
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        {[
+          { done: true, label: "Compte créé", link: null },
+          { done: hasVehicle, label: "Ajoutez votre premier véhicule", link: "/vehicles" },
+          { done: hasDriver, label: "Invitez un chauffeur", link: "/drivers" },
+          { done: hasRide, label: "Enregistrez votre première course", link: "/rides/new" },
+        ].map((item, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{
+              width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+              background: item.done ? "var(--success)" : "var(--surface-2)",
+              border: item.done ? "none" : "1px solid var(--border)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {item.done && (
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              )}
+            </div>
+            {item.done || !item.link ? (
+              <span style={{ fontSize: "13px", color: item.done ? "var(--text-3)" : "var(--text)", fontWeight: item.done ? 400 : 500, textDecoration: item.done ? "line-through" : "none" }}>
+                {item.label}
+              </span>
+            ) : (
+              <Link to={item.link} style={{ fontSize: "13px", color: "var(--brand)", fontWeight: 500, textDecoration: "none" }}>
+                {item.label} →
+              </Link>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
-        {/* Checklist d'activation — disparaît quand tout est fait */}
-        {!activationDone && !isLoading && (
-          <div style={{
-            background: "var(--surface)", border: "1px solid var(--border)",
-            borderRadius: "12px", padding: "14px 16px", marginBottom: "20px",
+  const alertsBlock = (hasUnpaid || vehicleAlerts.length > 0) && (
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      {hasUnpaid && (
+        <Link to="/rides" style={{
+          display: "flex", alignItems: "center", gap: "10px",
+          padding: "11px 14px", borderRadius: "10px",
+          background: "var(--warning-bg)", border: "1px solid #fde68a",
+          color: "var(--warning-text)", textDecoration: "none",
+          fontSize: "13px", fontWeight: 500,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>
+            <strong>{stats.unpaid_count} facture{stats.unpaid_count > 1 ? "s" : ""}</strong> en attente — {stats.unpaid_amount.toLocaleString("fr-FR")}€
+          </span>
+        </Link>
+      )}
+      {vehicleAlerts.length > 0 && (
+        <Link to="/vehicles" style={{
+          display: "flex", alignItems: "center", gap: "10px",
+          padding: "11px 14px", borderRadius: "10px",
+          background: "var(--danger-bg)", border: "1px solid #fecaca",
+          color: "var(--danger-text)", textDecoration: "none",
+          fontSize: "13px", fontWeight: 500,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round">
+            <rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h5l3 5v3h-8V8z"/>
+            <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+          <span>
+            <strong>{vehicleAlerts.length} véhicule{vehicleAlerts.length > 1 ? "s" : ""}</strong> avec documents à renouveler
+          </span>
+        </Link>
+      )}
+    </div>
+  );
+
+  const gasoilBlock = showGasoil && gasoil?.prix && Object.keys(gasoil.prix).length > 0 && (
+    <div style={{
+      background: "var(--surface)", border: "1px solid var(--border)",
+      borderRadius: "12px", padding: "12px 16px",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round">
+            <path d="M3 22V8l9-6 9 6v14"/><path d="M9 22V12h6v10"/><path d="M21 10h2v4h-2"/>
+          </svg>
+          <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Prix carburant — France
+          </span>
+        </div>
+        <span style={{ fontSize: "10px", color: "var(--text-3)" }}>
+          {gasoil.fetched_at
+            ? `Mis à jour à ${new Date(gasoil.fetched_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
+            : "Prix carburant"}
+        </span>
+      </div>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        {Object.entries(gasoil.prix).map(([label, prix]) => (
+          <div key={label} style={{
+            display: "flex", flexDirection: "column", alignItems: "center",
+            background: label === "Gazole" ? "var(--brand-light)" : "var(--surface-2)",
+            borderRadius: "9px", padding: "7px 12px", minWidth: "60px",
           }}>
-            <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--text)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Mise en route
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {[
-                { done: true, label: "Compte créé", link: null },
-                { done: hasVehicle, label: "Ajoutez votre premier véhicule", link: "/vehicles" },
-                { done: hasDriver, label: "Invitez un chauffeur", link: "/drivers" },
-                { done: hasRide, label: "Enregistrez votre première course", link: "/rides/new" },
-              ].map((item, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <div style={{
-                    width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
-                    background: item.done ? "var(--success)" : "var(--surface-2)",
-                    border: item.done ? "none" : "1px solid var(--border)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    {item.done && (
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
-                        <path d="M20 6L9 17l-5-5"/>
-                      </svg>
-                    )}
-                  </div>
-                  {item.done || !item.link ? (
-                    <span style={{ fontSize: "13px", color: item.done ? "var(--text-3)" : "var(--text)", fontWeight: item.done ? 400 : 500, textDecoration: item.done ? "line-through" : "none" }}>
-                      {item.label}
-                    </span>
-                  ) : (
-                    <Link to={item.link} style={{ fontSize: "13px", color: "var(--brand)", fontWeight: 500, textDecoration: "none" }}>
-                      {item.label} →
-                    </Link>
+            <span style={{ fontSize: "13px", fontWeight: 800, color: label === "Gazole" ? "var(--brand)" : "var(--text)" }}>
+              {prix.toFixed(3)}€
+            </span>
+            <span style={{ fontSize: "10px", color: "var(--text-3)", marginTop: "1px", fontWeight: 500 }}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const kpisBlock = isLoading ? (
+    <SkeletonKpiCards />
+  ) : (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-[10px]">
+      <KpiCard
+        config={KPI_CONFIGS[0]}
+        value={`${(stats?.ca_month || 0).toLocaleString("fr-FR")}€`}
+        delta={stats?.ca_month}
+        deltaRef={stats?.ca_prev_month}
+        sparkData={monthly?.weekly}
+      />
+      <KpiCard
+        config={KPI_CONFIGS[1]}
+        value={stats?.rides_today ?? "—"}
+        delta={stats?.rides_today}
+        deltaRef={stats?.rides_yesterday}
+      />
+      <KpiCard
+        config={KPI_CONFIGS[2]}
+        value={vehicles.length ? `${availableVehicles} / ${vehicles.length}` : "—"}
+      />
+      <KpiCard
+        config={KPI_CONFIGS[3]}
+        value={`${(stats?.unpaid_amount || 0).toLocaleString("fr-FR")}€`}
+        sub={stats?.unpaid_count ? `${stats.unpaid_count} en attente` : "Aucune"}
+        alert={hasUnpaid}
+      />
+    </div>
+  );
+
+  const ridesBlock = (
+    <>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+        <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
+          Courses récentes
+        </p>
+        <Link to="/rides" style={{ fontSize: "12.5px", fontWeight: 500, color: "var(--brand)", textDecoration: "none" }}>
+          Voir tout →
+        </Link>
+      </div>
+
+      {isLoading ? (
+        <SkeletonRideList rows={4} />
+      ) : rides.length === 0 ? (
+        <EmptyState
+          icon="rides"
+          title="Aucune course pour l'instant"
+          subtitle="Enregistrez votre première course pour voir le CA et les statistiques se remplir automatiquement."
+          linkTo="/rides/new"
+          linkLabel="+ Enregistrer une course"
+        />
+      ) : (
+        <div style={{
+          background: "var(--surface)", border: "1px solid var(--border)",
+          borderRadius: "12px", overflow: "hidden",
+        }}>
+          {rides.map((ride, i) => {
+            const pc = PAYMENT_COLORS[ride.payment_type] || { bg: "var(--surface-2)", color: "var(--text-2)" };
+            return (
+              <div
+                key={ride.id}
+                onClick={() => navigate(`/rides/${ride.id}/edit`)}
+                style={{
+                  display: "flex", alignItems: "center", gap: "12px",
+                  padding: "12px 16px",
+                  borderBottom: i < rides.length - 1 ? "1px solid var(--border)" : "none",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                <span style={{
+                  width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+                  background: ride.status === "paid" ? "var(--success)" : "var(--warning)",
+                }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--text)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {ride.client_name || "Course sans nom"}
+                  </p>
+                  {(ride.origin || ride.destination) && (
+                    <p style={{ fontSize: "12px", color: "var(--text-3)", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {ride.origin}{ride.destination ? ` → ${ride.destination}` : ""}
+                    </p>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Alertes */}
-        {(hasUnpaid || vehicleAlerts.length > 0) && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
-            {hasUnpaid && (
-              <Link to="/rides" style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "11px 14px",
-                borderRadius: "10px",
-                background: "var(--warning-bg)",
-                border: "1px solid #fde68a",
-                color: "var(--warning-text)",
-                textDecoration: "none",
-                fontSize: "13px",
-                fontWeight: 500,
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-                <span>
-                  <strong>{stats.unpaid_count} facture{stats.unpaid_count > 1 ? "s" : ""}</strong> en attente —{" "}
-                  {stats.unpaid_amount.toLocaleString("fr-FR")}€
-                </span>
-              </Link>
-            )}
-            {vehicleAlerts.length > 0 && (
-              <Link to="/vehicles" style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "11px 14px",
-                borderRadius: "10px",
-                background: "var(--danger-bg)",
-                border: "1px solid #fecaca",
-                color: "var(--danger-text)",
-                textDecoration: "none",
-                fontSize: "13px",
-                fontWeight: 500,
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round">
-                  <rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h5l3 5v3h-8V8z"/>
-                  <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
-                </svg>
-                <span>
-                  <strong>{vehicleAlerts.length} véhicule{vehicleAlerts.length > 1 ? "s" : ""}</strong> avec documents à renouveler
-                </span>
-              </Link>
-            )}
-          </div>
-        )}
-
-        {/* Widget Gasoil */}
-        {showGasoil && gasoil?.prix && Object.keys(gasoil.prix).length > 0 && (
-          <div style={{
-            background: "var(--surface)", border: "1px solid var(--border)",
-            borderRadius: "12px", padding: "12px 16px", marginBottom: "20px",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" strokeLinecap="round">
-                  <path d="M3 22V8l9-6 9 6v14"/><path d="M9 22V12h6v10"/><path d="M21 10h2v4h-2"/>
-                </svg>
-                <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Prix carburant — France
-                </span>
-              </div>
-              <span style={{ fontSize: "10px", color: "var(--text-3)" }}>
-                {gasoil.fetched_at
-                  ? `Mis à jour à ${new Date(gasoil.fetched_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
-                  : "Prix carburant"}
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              {Object.entries(gasoil.prix).map(([label, prix]) => (
-                <div key={label} style={{
-                  display: "flex", flexDirection: "column", alignItems: "center",
-                  background: label === "Gazole" ? "var(--brand-light)" : "var(--surface-2)",
-                  borderRadius: "9px", padding: "7px 12px", minWidth: "60px",
-                }}>
-                  <span style={{ fontSize: "13px", fontWeight: 800, color: label === "Gazole" ? "var(--brand)" : "var(--text)" }}>
-                    {prix.toFixed(3)}€
-                  </span>
-                  <span style={{ fontSize: "10px", color: "var(--text-3)", marginTop: "1px", fontWeight: 500 }}>{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* KPIs */}
-        {isLoading ? (
-          <SkeletonKpiCards />
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "24px" }}>
-            <KpiCard
-              config={KPI_CONFIGS[0]}
-              value={`${(stats?.ca_month || 0).toLocaleString("fr-FR")}€`}
-              delta={stats?.ca_month}
-              deltaRef={stats?.ca_prev_month}
-              sparkData={monthly?.weekly}
-            />
-            <KpiCard
-              config={KPI_CONFIGS[1]}
-              value={stats?.rides_today ?? "—"}
-              delta={stats?.rides_today}
-              deltaRef={stats?.rides_yesterday}
-            />
-            <KpiCard
-              config={KPI_CONFIGS[2]}
-              value={vehicles.length ? `${availableVehicles} / ${vehicles.length}` : "—"}
-            />
-            <KpiCard
-              config={KPI_CONFIGS[3]}
-              value={`${(stats?.unpaid_amount || 0).toLocaleString("fr-FR")}€`}
-              sub={stats?.unpaid_count ? `${stats.unpaid_count} en attente` : "Aucune"}
-              alert={hasUnpaid}
-            />
-          </div>
-        )}
-
-        {/* Courses récentes */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-          <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
-            Courses récentes
-          </p>
-          <Link to="/rides" style={{ fontSize: "12.5px", fontWeight: 500, color: "var(--brand)", textDecoration: "none" }}>
-            Voir tout →
-          </Link>
-        </div>
-
-        {isLoading ? (
-          <SkeletonRideList rows={4} />
-        ) : rides.length === 0 ? (
-          <EmptyState
-            icon="rides"
-            title="Aucune course pour l'instant"
-            subtitle="Enregistrez votre première course pour voir le CA et les statistiques se remplir automatiquement."
-            linkTo="/rides/new"
-            linkLabel="+ Enregistrer une course"
-          />
-        ) : (
-          <div style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "12px",
-            overflow: "hidden",
-          }}>
-            {rides.map((ride, i) => {
-              const pc = PAYMENT_COLORS[ride.payment_type] || { bg: "var(--surface-2)", color: "var(--text-2)" };
-              return (
-                <div
-                  key={ride.id}
-                  onClick={() => navigate(`/rides/${ride.id}/edit`)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    padding: "12px 16px",
-                    borderBottom: i < rides.length - 1 ? "1px solid var(--border)" : "none",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                >
-                  <span style={{
-                    width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-                    background: ride.status === "paid" ? "var(--success)" : "var(--warning)",
-                  }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--text)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {ride.client_name || "Course sans nom"}
-                    </p>
-                    {(ride.origin || ride.destination) && (
-                      <p style={{ fontSize: "12px", color: "var(--text-3)", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {ride.origin}{ride.destination ? ` → ${ride.destination}` : ""}
-                      </p>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                    {ride.payment_type && (
-                      <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "99px", background: pc.bg, color: pc.color }}>
-                        {PAYMENT_LABELS[ride.payment_type] || ride.payment_type}
-                      </span>
-                    )}
-                    <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>
-                      {Number(ride.amount).toFixed(0)}€
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                  {ride.payment_type && (
+                    <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "99px", background: pc.bg, color: pc.color }}>
+                      {PAYMENT_LABELS[ride.payment_type] || ride.payment_type}
                     </span>
-                  </div>
+                  )}
+                  <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>
+                    {Number(ride.amount).toFixed(0)}€
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <Layout title="Tableau de bord">
+      {/* Mobile/tablette : flux simple max-w-3xl */}
+      <div className="lg:hidden max-w-3xl mx-auto p-4 animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        {activationBlock}
+        {alertsBlock}
+        {gasoilBlock}
+        {kpisBlock}
+        <div>{ridesBlock}</div>
+      </div>
+
+      {/* Desktop : grille 2 colonnes (principale 2fr / sidebar 1fr) sur max-w-7xl */}
+      <div className="hidden lg:grid animate-fade-in" style={{
+        gridTemplateColumns: "minmax(0, 2fr) minmax(280px, 1fr)",
+        gap: "20px",
+        maxWidth: "1280px",
+        margin: "0 auto",
+        padding: "24px",
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px", minWidth: 0 }}>
+          {kpisBlock}
+          {ridesBlock}
+        </div>
+        <aside style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {activationBlock}
+          {alertsBlock}
+          {gasoilBlock}
+        </aside>
       </div>
     </Layout>
   );
