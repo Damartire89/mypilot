@@ -6,8 +6,8 @@ class Ride(Base):
     __tablename__ = "rides"
 
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    driver_id = Column(Integer, ForeignKey("drivers.id"), nullable=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    driver_id = Column(Integer, ForeignKey("drivers.id"), nullable=True, index=True)
     vehicle_id = Column(Integer, ForeignKey("vehicles.id"), nullable=True)
     client_name = Column(String(200), nullable=True)
     client_address = Column(String(300), nullable=True)
