@@ -27,7 +27,12 @@ client.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      window.location.href = "/";
+      const url = err.config?.url || "";
+      const onLoginPage = window.location.pathname === "/";
+      const isAuthBootstrap = url.includes("/auth/me") || url.includes("/auth/login");
+      if (!onLoginPage && !isAuthBootstrap) {
+        window.location.href = "/";
+      }
     }
     return Promise.reject(err);
   }
