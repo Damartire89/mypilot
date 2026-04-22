@@ -230,15 +230,11 @@ export default function Layout({ children, title }) {
       <div style={{ marginLeft: 0 }} className="lg:ml-[240px] flex flex-col min-h-screen">
         {/* TopBar mobile */}
         <div
-          className="lg:hidden"
+          className="lg:hidden flex items-center justify-between gap-[10px]"
           style={{
             background: "var(--surface)",
             borderBottom: "1px solid var(--border)",
             padding: "10px 16px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "10px",
           }}
         >
           <Logo size={20} />
